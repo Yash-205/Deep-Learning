@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive worksheet on regularization, large weights, L2, L1, dropout, batch normalization and early stopping in deep learning.">
+  <title>Regularization Lab — Learn the Pattern, Not the Noise</title>
+  <style>
+    :root{
+      --paper:#f4efe4;--sheet:#fffdf7;--ink:#172c35;--muted:#64736f;--line:#cfd8d2;
+      --teal:#087f78;--coral:#f26b4f;--sun:#f4bf4f;--navy:#315a72;--green:#31845f;
+      --shadow:0 22px 70px rgba(23,44,53,.10)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:radial-gradient(circle at 12% 3%,rgba(244,191,79,.20),transparent 25rem),linear-gradient(rgba(23,44,53,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(23,44,53,.025) 1px,transparent 1px),var(--paper);background-size:auto,24px 24px,24px 24px;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:default}
+    ::selection{background:rgba(244,191,79,.55)}
+    .topbar{position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(23,44,53,.12);background:rgba(244,239,228,.94);backdrop-filter:blur(14px)}
+    .topbar-inner{display:flex;align-items:center;gap:14px;max-width:1180px;margin:auto;padding:11px 20px}
+    .mark{display:grid;width:40px;height:40px;place-items:center;border-radius:50%;background:var(--ink);color:var(--paper);font-size:21px;box-shadow:4px 4px 0 var(--sun)}
+    .brand small,.label,.kicker{display:block;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+    .brand strong{display:block;margin-top:2px;font-size:15px}
+    .progress-wrap{flex:1;max-width:340px;margin-left:auto}.progress-copy{display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;font-weight:800}.progress-track{height:7px;overflow:hidden;border-radius:99px;background:rgba(23,44,53,.11)}#progress-bar{height:100%;width:0;background:var(--teal);transition:width .3s ease}
+    .tool{display:grid;width:36px;height:36px;place-items:center;border:1px solid rgba(23,44,53,.15);border-radius:9px;background:rgba(255,255,255,.58);color:var(--ink)}
+    .page{max-width:1180px;margin:auto;padding:62px 24px 110px}
+    .hero{display:grid;grid-template-columns:1fr 355px;align-items:end;gap:42px}
+    .eyebrow{color:var(--teal);font-size:12px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+    .hero h1{max-width:850px;margin:17px 0 0;font:700 clamp(48px,7vw,98px)/.92 Georgia,"Times New Roman",serif;letter-spacing:-.055em}
+    .hero h1 em{color:var(--teal);font-weight:inherit}
+    .intro{position:relative;border-left:2px solid var(--coral);padding:3px 0 3px 68px;color:var(--muted);font-size:18px;line-height:1.6}
+    .intro b{position:absolute;left:14px;top:4px;color:var(--coral);font:850 10px ui-monospace,monospace;letter-spacing:.08em}
+    .orientation{display:grid;grid-template-columns:repeat(4,1fr);margin:50px 0 105px;overflow:hidden;border:1px solid rgba(23,44,53,.14);border-radius:18px;background:rgba(255,253,247,.72)}
+    .orientation div{position:relative;min-height:116px;padding:21px 18px 19px 48px}.orientation div+div{border-left:1px solid rgba(23,44,53,.12)}.orientation span{position:absolute;left:16px;color:var(--coral);font:850 11px ui-monospace,monospace}.orientation strong{display:block;font:700 19px Georgia,serif}.orientation p{margin:7px 0 0;color:var(--muted);font-size:14px;line-height:1.45}
+    .lab{margin-top:110px;scroll-margin-top:82px}.lab-head{display:grid;grid-template-columns:54px 1fr auto;align-items:end;gap:16px;margin-bottom:24px}.lab-num{display:grid;width:44px;height:44px;place-items:center;border:1px solid rgba(23,44,53,.18);border-radius:50%;color:var(--muted);font:800 12px ui-monospace,monospace}.kicker{margin-bottom:6px;color:var(--coral)}.lab h2{margin:0;font:700 clamp(32px,5vw,50px)/1 Georgia,serif;letter-spacing:-.025em}.done{display:none;align-items:center;gap:5px;border-radius:99px;background:rgba(8,127,120,.12);padding:7px 10px;color:var(--teal);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.lab.complete .done{display:flex}
+    .card{overflow:hidden;border:1px solid rgba(23,44,53,.15);border-radius:24px;background:rgba(255,253,247,.98);box-shadow:var(--shadow),8px 8px 0 rgba(8,127,120,.08)}.pad{padding:30px}
+    .theory{margin:0;border-left:3px solid var(--sun);background:rgba(244,191,79,.12);padding:15px 17px;color:var(--muted);font-size:17px;line-height:1.62}.theory strong{color:var(--ink)}
+    .takeaway{margin-top:20px;border-left:4px solid var(--teal);border-radius:0 14px 14px 0;background:rgba(8,127,120,.08);padding:15px 18px;font-weight:800}.takeaway span{color:var(--teal)}
+    .method-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:25px}.method{border:1px solid rgba(23,44,53,.13);border-radius:15px;background:#fff;padding:17px;min-height:155px}.method b{display:block;margin-bottom:8px;font:700 20px Georgia,serif}.method p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}.method.weight{border-top:4px solid var(--teal)}.method.other{border-top:4px solid var(--sun)}
+    .note-btn{display:inline-flex;align-items:center;gap:7px;margin-top:18px;border:1px solid rgba(23,44,53,.16);border-radius:99px;background:transparent;padding:9px 13px;color:var(--navy);font-size:13px;font-weight:850}.note-btn:hover{background:rgba(49,90,114,.07)}
+    .case-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(315px,.7fr);gap:0}.visual{padding:30px;border-right:1px solid rgba(23,44,53,.1)}.control{padding:30px}.visual h3,.control h3{margin:3px 0 17px;font:700 29px Georgia,serif}.chart{display:block;width:100%;height:auto}.caption{margin:7px 0 0;color:var(--muted);font-size:13px;text-align:center}
+    .mini-table{width:100%;margin-top:16px;border-collapse:collapse;font-size:14px}.mini-table th,.mini-table td{border-bottom:1px solid rgba(23,44,53,.10);padding:8px 10px;text-align:center}.mini-table th{color:var(--muted);font-size:11px;letter-spacing:.07em;text-transform:uppercase}.noise-row td{background:rgba(242,107,79,.08);color:var(--coral);font-weight:850}
+    .toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.toggle{border:1px solid rgba(23,44,53,.15);border-radius:11px;background:transparent;padding:11px;font-weight:850}.toggle.active{background:var(--ink);color:var(--paper)}
+    .metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.metric{border-radius:12px;background:rgba(8,127,120,.08);padding:13px}.metric span{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.metric b{display:block;margin-top:3px;font:800 21px ui-monospace,monospace}.metric.bad{background:rgba(242,107,79,.10)}.metric.bad b{color:var(--coral)}
+    .slider-label{display:flex;justify-content:space-between;align-items:end;margin-top:22px}.slider-label span{color:var(--muted);font-size:12px;font-weight:850;text-transform:uppercase}.slider-label b{color:var(--teal);font:800 31px Georgia,serif}.range{width:100%;margin-top:10px;accent-color:var(--coral)}.scale{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:800}
+    .formula{margin-top:18px;border:1px solid rgba(23,44,53,.12);border-radius:14px;background:rgba(8,127,120,.07);padding:17px}.formula span{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.formula b{display:block;margin-top:5px;font:700 22px Georgia,serif}.formula p{margin:8px 0 0;color:var(--muted);font-size:14px}
+    .action{width:100%;margin-top:18px;border:0;border-radius:11px;background:var(--teal);padding:13px;color:#fff;font-weight:850}.action.secondary{background:var(--ink)}.action.ghost{border:1px solid rgba(23,44,53,.15);background:transparent;color:var(--ink)}
+    .reveal-box{display:none;margin-top:15px;border-radius:14px;background:rgba(242,107,79,.08);padding:15px;color:var(--ink)}.reveal-box.show{display:block}
+    .question{margin-top:28px}.question>strong{display:block;font-size:17px;line-height:1.5}.answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px;margin-top:11px}.answer{display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(23,44,53,.14);border-radius:12px;background:transparent;padding:12px 14px;color:var(--ink);text-align:left;font-size:15px;font-weight:750;transition:.15s}.answer:hover{transform:translateX(3px);border-color:var(--teal)}.answer.wrong{border-color:rgba(242,107,79,.55);color:var(--muted);opacity:.62}.answer.correct{border-color:var(--teal);background:rgba(8,127,120,.09);color:var(--teal)}.feedback{display:none;margin:10px 0 0;border-radius:10px;background:rgba(242,107,79,.1);padding:10px 12px;color:var(--coral);font-size:14px;font-weight:700;line-height:1.45}.feedback.show{display:block}.feedback.success{background:rgba(8,127,120,.1);color:var(--teal)}
+    .equation-story{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:9px;margin-top:22px}.eq-card{border:1px solid rgba(23,44,53,.13);border-radius:14px;background:#fff;padding:15px;text-align:center}.eq-card span{display:block;color:var(--muted);font-size:11px;font-weight:800}.eq-card b{display:block;margin-top:4px;font:800 20px ui-monospace,monospace}.eq-arrow{color:var(--coral);font-size:25px;font-weight:900}
+    .numeric-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}.num-card{border:1px solid rgba(23,44,53,.13);border-radius:16px;background:#fff;padding:20px}.num-card h3{margin:0 0 9px;font:700 22px Georgia,serif}.num-card p{margin:5px 0;color:var(--muted);font-size:14px}.num-card .givens{border-radius:10px;background:rgba(23,44,53,.05);padding:11px 12px;color:var(--ink);font:750 14px ui-monospace,monospace}.answer-line{display:grid;grid-template-columns:1fr 120px;align-items:center;gap:10px;margin-top:10px}.answer-line label{font-size:14px;font-weight:700}.answer-line input{width:100%;border:1px solid rgba(23,44,53,.16);border-radius:9px;background:#fffdf7;padding:9px 10px;color:var(--ink);font-weight:800}.check{margin-top:12px;border:0;border-radius:9px;background:var(--ink);padding:9px 13px;color:#fff;font-weight:800}.num-feedback{min-height:22px;margin:9px 0 0;font-size:13px;font-weight:750}.num-feedback.ok{color:var(--teal)}.num-feedback.no{color:var(--coral)}
+    .worked{display:grid;grid-template-columns:280px 1fr;gap:22px;margin-top:24px}.worked-side{border-radius:16px;background:var(--ink);padding:22px;color:var(--paper)}.worked-side span{display:block;opacity:.62;font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.worked-side b{display:block;margin-top:8px;font:700 27px Georgia,serif}.worked-steps{display:grid;gap:8px}.step{border:1px solid rgba(23,44,53,.11);border-radius:12px;background:#fff;padding:13px 15px}.step small{color:var(--coral);font-weight:900}.step b{margin-left:8px;font-family:ui-monospace,monospace}
+    .multi-demo{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:23px}.weight-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.chip{border-radius:99px;background:rgba(49,90,114,.08);padding:7px 10px;font:800 13px ui-monospace,monospace}.sum-box{border-radius:16px;background:rgba(8,127,120,.08);padding:20px}.sum-box b{display:block;font:800 20px ui-monospace,monospace}.sum-box p{margin:8px 0 0;color:var(--muted);font-size:14px}
+    .gd-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:25px;margin-top:24px}.gd-panel{border:1px solid rgba(23,44,53,.12);border-radius:16px;background:#fff;padding:20px}.gd-panel svg{display:block;width:100%;height:auto}.gd-readout{display:grid;gap:9px}.readout{border-radius:11px;background:rgba(23,44,53,.055);padding:11px}.readout span{display:block;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase}.readout b{font:800 19px ui-monospace,monospace}.step-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.step-buttons button{border:0;border-radius:10px;padding:10px;font-weight:850}.step-buttons .primary{background:var(--teal);color:#fff}.step-buttons .reset-mini{background:rgba(23,44,53,.08);color:var(--ink)}
+    .compare{width:100%;margin-top:22px;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid rgba(23,44,53,.13);border-radius:15px;background:#fff}.compare th,.compare td{padding:13px 15px;border-bottom:1px solid rgba(23,44,53,.09);text-align:left}.compare tr:last-child td{border-bottom:0}.compare th{background:rgba(23,44,53,.05);font-size:12px;text-transform:uppercase;letter-spacing:.07em}.compare td:first-child{font-weight:850}.compare td:nth-child(2){background:rgba(244,191,79,.07)}.compare td:nth-child(3){background:rgba(8,127,120,.05)}
+    .completion{display:none;margin-top:28px;border-radius:16px;background:var(--teal);padding:27px;color:#fff;text-align:center}.completion.show{display:block}.completion b{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase}.completion h3{max-width:760px;margin:8px auto 0;font:700 25px/1.25 Georgia,serif}
+    .reference{display:grid;grid-template-columns:290px 1fr;gap:45px;margin-top:115px;border-top:2px solid var(--ink);border-bottom:1px solid rgba(23,44,53,.18);padding:43px 0}.reference h2{margin:5px 0;font:700 37px Georgia,serif}.reference dl{display:grid;grid-template-columns:1fr 1fr;gap:20px 28px;margin:0}.reference dt{font:700 18px Georgia,serif}.reference dd{margin:5px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+    footer{display:flex;gap:12px;align-items:center;padding-top:27px;color:var(--muted);font-size:13px}footer a{margin-left:auto;color:var(--teal);font-weight:800;text-decoration:none}
+    .drawer-backdrop{position:fixed;inset:0;z-index:80;background:rgba(23,44,53,.28);opacity:0;pointer-events:none;transition:.2s}.drawer-backdrop.show{opacity:1;pointer-events:auto}.drawer{position:fixed;top:0;right:0;z-index:90;width:min(520px,92vw);height:100vh;overflow:auto;background:var(--sheet);box-shadow:-20px 0 55px rgba(23,44,53,.18);transform:translateX(105%);transition:.25s ease;padding:28px}.drawer.show{transform:none}.drawer-top{display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(23,44,53,.12);padding-bottom:15px}.drawer-top strong{font:700 24px Georgia,serif}.drawer-close{margin-left:auto;border:1px solid rgba(23,44,53,.14);border-radius:9px;background:transparent;padding:8px 10px}.drawer-body{padding:18px 0 40px;color:var(--muted)}.drawer-body h3{margin:21px 0 7px;color:var(--ink);font:700 20px Georgia,serif}.drawer-body p{margin:8px 0}.drawer-body .math{border-radius:11px;background:rgba(8,127,120,.08);padding:12px;color:var(--ink);font:800 15px ui-monospace,monospace}.drawer-body .mini{border-left:3px solid var(--sun);background:rgba(244,191,79,.10);padding:12px 14px;color:var(--ink)}
+    .decision-pair{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}.decision-panel{border:1px solid rgba(23,44,53,.13);border-radius:18px;background:#fff;padding:17px}.decision-panel h3{margin:3px 0 5px;font:700 27px Georgia,serif}.decision-panel .subcopy{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.5}.boundary-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:10px;color:var(--muted);font-size:12px;font-weight:800}.boundary-legend span{display:flex;align-items:center;gap:6px}.legend-swatch{width:13px;height:13px;border-radius:3px}.legend-dot{width:12px;height:12px;border-radius:50%}.boundary-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.boundary-summary article{border:1px solid rgba(23,44,53,.11);border-radius:14px;padding:15px;background:rgba(23,44,53,.035)}.boundary-summary h4{margin:0 0 6px;font:700 19px Georgia,serif}.boundary-summary p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}.decision-callout{margin-top:18px;border-left:4px solid var(--teal);border-radius:0 14px 14px 0;background:rgba(8,127,120,.08);padding:15px 17px;color:var(--ink);font-size:15px;line-height:1.55}.decision-badge{display:inline-block;margin-top:10px;border-radius:99px;padding:6px 10px;font-size:12px;font-weight:900}.decision-badge.over{background:rgba(242,107,79,.12);color:var(--coral)}.decision-badge.good{background:rgba(8,127,120,.12);color:var(--teal)}.model-eq{margin-top:12px;border:1px solid rgba(23,44,53,.12);border-radius:13px;background:rgba(23,44,53,.035);padding:12px 13px}.model-eq .eq-label{display:block;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.model-eq .eq-main{display:block;margin-top:5px;color:var(--ink);font:800 15px ui-monospace,monospace;line-height:1.55}.model-eq p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.5}.model-eq strong{color:var(--ink)}.weight-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.weight-compare>div{border-radius:12px;padding:12px 13px}.weight-compare .normal{background:rgba(8,127,120,.08)}.weight-compare .large{background:rgba(242,107,79,.09)}.weight-compare span{display:block;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase}.weight-compare b{display:block;margin-top:3px;font:800 18px ui-monospace,monospace}.dataset-wrap{margin-top:16px;border:1px solid rgba(23,44,53,.11);border-radius:16px;background:#fff;padding:14px}.dataset-wrap h4{margin:0 0 10px;font:700 21px Georgia,serif}.dataset-wrap p{margin:0 0 10px;color:var(--muted);font-size:14px;line-height:1.5}.dataset-wrap .mini-table{margin-top:8px}
+    .gd-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px}.gd-compare-card{border:1px solid rgba(23,44,53,.13);border-radius:17px;background:#fff;padding:19px}.gd-compare-card.reg{border-top:4px solid var(--teal)}.gd-compare-card.old{border-top:4px solid var(--navy)}.gd-compare-card h3{margin:3px 0 10px;font:700 24px Georgia,serif}.gd-compare-card .gd-formula{border-radius:12px;background:rgba(23,44,53,.055);padding:13px 14px;font:800 17px ui-monospace,monospace}.gd-compare-card.reg .gd-formula{background:rgba(8,127,120,.08)}.gd-term{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;align-items:start;margin-top:13px}.gd-term b{font:800 14px ui-monospace,monospace}.gd-term p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}.gd-change{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}.gd-change div{border-radius:12px;background:rgba(23,44,53,.05);padding:12px;text-align:center}.gd-change span{display:block;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase}.gd-change b{display:block;margin-top:3px;font:800 18px ui-monospace,monospace}.loss-story{margin-top:24px;border:1px solid rgba(23,44,53,.12);border-radius:17px;background:#fff;padding:20px}.loss-story h3{margin:2px 0 10px;font:700 24px Georgia,serif}.loss-row{display:grid;grid-template-columns:170px 1fr 1fr;gap:10px;align-items:center;margin-top:10px}.loss-row>strong{font-size:14px}.loss-cell{border-radius:11px;background:rgba(23,44,53,.05);padding:11px 12px}.loss-cell span{display:block;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase}.loss-cell b{display:block;margin-top:2px;font:800 16px ui-monospace,monospace}.arrow-story{margin:18px 0;border-radius:14px;background:rgba(244,191,79,.13);padding:14px 16px;text-align:center;font-weight:850}.arrow-story b{color:var(--teal)}
+
+    .dropout-demo{margin-top:24px;border:1px solid rgba(23,44,53,.13);border-radius:18px;background:#fff;padding:22px}.dropout-demo h3,.early-activity h3{margin:0;font:700 24px Georgia,serif}.dropout-demo>p,.early-activity>p{margin:7px 0 0;color:var(--muted);font-size:14px}.dropout-setting{display:grid;grid-template-columns:170px 1fr 90px;align-items:center;gap:14px;margin-top:20px;border-radius:14px;background:rgba(244,191,79,.12);padding:14px 16px}.dropout-setting label{font-weight:850}.dropout-setting input{width:100%;accent-color:var(--teal)}.dropout-setting b{font:800 24px ui-monospace,monospace;color:var(--teal);text-align:right}.nn-stage{display:grid;grid-template-columns:1fr 38px 1fr 38px 1fr 38px 1fr;align-items:center;gap:8px;margin:22px 0;border:1px solid rgba(23,44,53,.10);border-radius:17px;background:linear-gradient(180deg,rgba(8,127,120,.035),rgba(255,255,255,.85));padding:18px}.nn-layer{text-align:center}.nn-layer>span{display:block;margin-bottom:10px;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.nn-nodes{display:grid;gap:8px;justify-items:center}.nn-node{position:relative;display:grid;width:58px;height:58px;place-items:center;border:2px solid rgba(8,127,120,.36);border-radius:50%;background:rgba(8,127,120,.08);font:800 13px ui-monospace,monospace;transition:.18s}.nn-node.fixed{border-color:rgba(49,90,114,.34);background:rgba(49,90,114,.07)}.nn-node.off{border-color:rgba(242,107,79,.48);background:rgba(242,107,79,.10);color:var(--muted);opacity:.52;transform:scale(.92)}.nn-node.off::after{content:'OFF';position:absolute;right:-7px;top:-5px;border-radius:99px;background:var(--coral);padding:2px 5px;color:#fff;font:900 8px ui-sans-serif,system-ui}.nn-arrow{color:var(--coral);font-size:29px;font-weight:900;text-align:center}.demo-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.demo-controls .action{width:auto;margin:0}.demo-status{margin:0;color:var(--muted);font-size:13px;font-weight:750}.mask-history{display:grid;gap:7px;margin-top:15px}.mask-row{border-radius:10px;background:rgba(23,44,53,.045);padding:9px 11px;color:var(--muted);font-size:12px;font-weight:750}.mask-row b{color:var(--ink)}.dropout-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}.compare-card{border:1px solid rgba(23,44,53,.12);border-radius:16px;background:#fff;padding:18px}.compare-card.dropout-side{border-top:4px solid var(--teal)}.compare-card.small-side{border-top:4px solid var(--navy)}.compare-card h3{margin:3px 0 9px;font:700 22px Georgia,serif}.compare-card p{margin:7px 0;color:var(--muted);font-size:14px;line-height:1.5}.compare-card ul{margin:10px 0 0;padding-left:20px;color:var(--muted);font-size:14px}.concept-flow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.concept-step{border:1px solid rgba(23,44,53,.12);border-radius:14px;background:rgba(23,44,53,.025);padding:15px}.concept-step span{display:block;color:var(--coral);font:900 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}.concept-step b{display:block;margin-top:5px;font:700 18px Georgia,serif}.concept-step p{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.45}.early-activity{margin-top:24px;border:1px solid rgba(23,44,53,.13);border-radius:18px;background:#fff;padding:22px}.epoch-choices{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:16px}.epoch-btn{border:1px solid rgba(23,44,53,.15);border-radius:11px;background:transparent;padding:11px 8px;font-weight:850}.epoch-btn:hover{border-color:var(--teal);transform:translateY(-1px)}.epoch-btn.wrong{border-color:rgba(242,107,79,.5);color:var(--muted);opacity:.62}.epoch-btn.correct{border-color:var(--teal);background:rgba(8,127,120,.09);color:var(--teal)}.epoch-feedback{display:none;margin:12px 0 0;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:750}.epoch-feedback.show{display:block;background:rgba(242,107,79,.1);color:var(--coral)}.epoch-feedback.show.success{background:rgba(8,127,120,.1);color:var(--teal)}
+    @media(max-width:900px){.hero{grid-template-columns:1fr}.orientation{grid-template-columns:1fr 1fr}.orientation div:nth-child(3){border-left:0;border-top:1px solid rgba(23,44,53,.12)}.orientation div:nth-child(4){border-top:1px solid rgba(23,44,53,.12)}.method-grid{grid-template-columns:1fr 1fr}.case-grid,.gd-grid,.worked,.reference,.decision-pair{grid-template-columns:1fr}.visual{border-right:0;border-bottom:1px solid rgba(23,44,53,.1)}.numeric-grid,.multi-demo{grid-template-columns:1fr}.equation-story{grid-template-columns:1fr}.eq-arrow{transform:rotate(90deg)}.reference dl{grid-template-columns:1fr 1fr}.concept-flow{grid-template-columns:1fr}.nn-stage{grid-template-columns:1fr}.nn-arrow{transform:rotate(90deg)}.dropout-compare{grid-template-columns:1fr}}
+    @media(max-width:560px){.page{padding:42px 15px 75px}.brand{display:none}.progress-wrap{max-width:190px}.hero h1{font-size:44px}.intro{padding-left:55px}.orientation,.method-grid{grid-template-columns:1fr}.orientation div+div,.orientation div:nth-child(3),.orientation div:nth-child(4){border-left:0;border-top:1px solid rgba(23,44,53,.12)}.lab-head{grid-template-columns:42px 1fr}.done{grid-column:2;justify-self:start}.pad,.visual,.control{padding:20px}.metrics,.numeric-grid,.boundary-summary{grid-template-columns:1fr}.toggle-row{grid-template-columns:1fr}.answer-line{grid-template-columns:1fr}.reference dl{grid-template-columns:1fr}.epoch-choices{grid-template-columns:repeat(3,1fr)}.dropout-setting{grid-template-columns:1fr}.dropout-setting b{text-align:left}footer{flex-wrap:wrap}footer a{width:100%;margin-left:0}}
+    @media print{.topbar,.note-btn,.drawer,.drawer-backdrop,button{display:none!important}body{background:#fff}.page{max-width:none;padding:20px}.lab{margin-top:45px;break-inside:avoid}.card{box-shadow:none}.reveal-box{display:block}.reference{margin-top:50px}}
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="mark">λ</div>
+    <div class="brand"><small>Deep learning · interactive worksheet</small><strong>Regularization Lab</strong></div>
+    <div class="progress-wrap"><div class="progress-copy"><span id="progress-copy">0 of 15 activities</span><span id="progress-percent">0%</span></div><div class="progress-track"><div id="progress-bar"></div></div></div>
+    <button class="tool" id="print" title="Print">⌕</button>
+    <button class="tool" id="reset" title="Reset">↻</button>
+  </div>
+</header>
+
+<main class="page">
+  <section class="hero">
+    <div><p class="eyebrow">✦ Regularization, from the problem to the fix</p><h1>Learn the pattern.<br><em>Not the noise.</em></h1></div>
+    <div class="intro"><b>BIG IDEA</b>A good model should learn the real pattern—not bend itself to memorize every unusual training point.</div>
+  </section>
+  <section class="orientation">
+    <div><span>01</span><strong>Predict first</strong><p>Think before revealing the result.</p></div>
+    <div><span>02</span><strong>Change one thing</strong><p>Use sliders and toggles to see cause and effect.</p></div>
+    <div><span>03</span><strong>Calculate</strong><p>Do the short numericals yourself.</p></div>
+    <div><span>04</span><strong>Explain</strong><p>Finish each section with one simple reason.</p></div>
+  </section>
+
+  <section class="lab" id="lab-1" data-lab="1">
+    <div class="lab-head"><span class="lab-num">01</span><div><span class="kicker">the big picture</span><h2>What is regularization?</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>Regularization is a group of techniques used to reduce overfitting and help a model work better on unseen data.</strong> Different regularization methods control overfitting in different ways.</p>
+      <div class="method-grid">
+        <article class="method weight"><b>L2</b><p>Adds a penalty based on squared weights. It discourages very large weight values.</p></article>
+        <article class="method weight"><b>L1</b><p>Adds a penalty based on absolute weight values. It can make some weights exactly zero.</p></article>
+        <article class="method other"><b>Dropout</b><p>Randomly switches off some neurons during training so the network does not depend too much on particular neurons.</p></article>
+        <article class="method other"><b>Early stopping</b><p>Stops training when validation performance starts getting worse.</p></article>
+        <article class="method other"><b>Batch normalization</b><p>Normalizes intermediate activations during training. Its mini-batch behavior can also give some regularizing effect.</p></article>
+      </div>
+      <div class="takeaway"><span>Important:</span> L1 and L2 directly penalize weights. Dropout, early stopping and batch normalization control overfitting in other ways.</div>
+      <button class="note-btn" data-note="all-methods">ⓘ Do all regularization methods make weights smaller?</button>
+      <div class="question" data-q="method"><strong>Which methods in this worksheet directly add a penalty based on weight magnitude?</strong><div class="answers"><button class="answer" data-value="l1l2" data-correct>L1 and L2 <span>→</span></button><button class="answer" data-value="dropout" data-hint="Dropout switches neurons off; it does not directly add |W| or W² to the loss.">Dropout and early stopping <span>→</span></button><button class="answer" data-value="all" data-hint="Regularization is a broad family. Not every method directly penalizes weights.">All of them <span>→</span></button></div><p class="feedback"></p></div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-2" data-lab="2">
+    <div class="lab-head"><span class="lab-num">02</span><div><span class="kicker">case study</span><h2>One noisy point bends the boundary</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>Noise</strong> is a training example that does not follow the real pattern—for example a wrong label, a measurement error, or an unusual random sample. Here the highlighted point has <b>x₁ = -1.8</b> but is labelled class 1 even though it sits inside the class-0 group.</p>
+      <p style="margin:13px 0 0;color:var(--muted);font-size:14px">To make the <strong>decision boundary</strong> visible, this picture uses two input features, <b>x₁</b> and <b>x₂</b>. The important point is the shape of the boundary—not the exact coordinates.</p>
+
+      <div class="decision-pair">
+        <article class="decision-panel">
+          <span class="kicker">1 · fit every training point</span>
+          <h3>Overfitted decision boundary</h3>
+          <p class="subcopy">The model bends the class-1 region deep into the class-0 side just to capture the noisy point.</p>
+          <svg class="chart" viewBox="0 0 520 350" role="img" aria-label="Two-dimensional overfitted classification decision boundary bending around a noisy class-1 point inside the class-0 region">
+            <defs><clipPath id="plot-over"><rect x="58" y="42" width="410" height="250" rx="5"/></clipPath></defs>
+            <rect width="520" height="350" rx="14" fill="#fbfdfb"/>
+            <g clip-path="url(#plot-over)">
+              <rect x="58" y="42" width="410" height="250" fill="#e9f1f6"/>
+              <!-- class-1 decision region: right side plus a narrow peninsula around the noisy point -->
+              <path d="M286 42 L468 42 L468 292 L286 292
+                       C289 264 290 235 286 211
+                       C279 184 263 165 240 156
+                       C219 148 202 151 185 158
+                       C165 167 143 171 124 162
+                       C103 153 94 134 99 114
+                       C104 91 124 79 147 81
+                       C169 83 181 101 199 111
+                       C218 122 239 120 257 108
+                       C274 97 282 76 286 42 Z" fill="#fde9e3"/>
+              <!-- actual learned boundary -->
+              <path d="M286 42
+                       C282 76 274 97 257 108
+                       C239 120 218 122 199 111
+                       C181 101 169 83 147 81
+                       C124 79 104 91 99 114
+                       C94 134 103 153 124 162
+                       C143 171 165 167 185 158
+                       C202 151 219 148 240 156
+                       C263 165 279 184 286 211
+                       C290 235 289 264 286 292" fill="none" stroke="#172c35" stroke-width="4.5" stroke-linecap="round"/>
+              <!-- class 0 training points -->
+              <g fill="#315a72" stroke="#fff" stroke-width="3">
+                <circle cx="102" cy="241" r="8"/><circle cx="136" cy="207" r="8"/><circle cx="174" cy="251" r="8"/><circle cx="211" cy="212" r="8"/><circle cx="240" cy="246" r="8"/>
+              </g>
+              <!-- class 1 normal training points -->
+              <g fill="#f26b4f" stroke="#fff" stroke-width="3">
+                <circle cx="333" cy="229" r="8"/><circle cx="365" cy="179" r="8"/><circle cx="400" cy="235" r="8"/><circle cx="431" cy="151" r="8"/>
+              </g>
+              <!-- noisy class 1 point inside class 0 territory -->
+              <circle cx="147" cy="112" r="10" fill="#f26b4f" stroke="#f4bf4f" stroke-width="7"/>
+              <!-- nearby unseen class-0 examples; inside the wrong coral peninsula -->
+            </g>
+            <line x1="58" x2="468" y1="292" y2="292" stroke="#8d9c96" stroke-width="2"/>
+            <line x1="58" x2="58" y1="42" y2="292" stroke="#8d9c96" stroke-width="2"/>
+            <text x="463" y="318" text-anchor="end" fill="#64736f" font-size="13">feature x₁ →</text>
+            <text x="22" y="176" transform="rotate(-90 22 176)" text-anchor="middle" fill="#64736f" font-size="13">feature x₂</text>
+            <text x="114" y="66" fill="#315a72" font-size="13" font-weight="850">model predicts class 0</text>
+            <text x="337" y="66" fill="#f26b4f" font-size="13" font-weight="850">model predicts class 1</text>
+            <path d="M153 103 L205 73" stroke="#87620b" stroke-width="2" marker-end="url(#none)"/>
+            <text x="209" y="70" fill="#87620b" font-size="12" font-weight="850">noisy point, x₁ = -1.8</text>
+                        <text x="298" y="278" fill="#172c35" font-size="12" font-weight="900">decision boundary</text>
+          </svg>
+          <div class="model-eq">
+            <span class="eq-label">one neuron inside the MLP · simplified illustration</span>
+            <span class="eq-main">z<sub>overfit neuron</sub> = <strong>12x₁ + 9x₂</strong> − 0.2</span>
+            <p><b>Input weights:</b> <strong>W₁ = 12</strong>, <strong>W₂ = 9</strong> &nbsp; · &nbsp; <b>Bias:</b> −0.2</p>
+            <p><strong>This is not the complete MLP architecture.</strong> It is a simplified view of what can happen inside one neuron. The noisy variation is already present in the input features x₁ and x₂. If this neuron learns very large weights for those inputs, small noisy changes in x₁ or x₂ can create a much larger change in the neuron's output.</p>
+            <p>The <strong>curved decision boundary above is produced by the complete MLP</strong>, using many neurons and nonlinear activation functions. This one-neuron equation is shown only to illustrate how large input weights can make part of the network overly sensitive to noisy inputs.</p>
+          </div>
+          <span class="decision-badge over">Training mistakes: 0 · boundary is highly bent</span>
+        </article>
+
+        <article class="decision-panel">
+          <span class="kicker">2 · ignore the noisy label</span>
+          <h3>Generalized decision boundary</h3>
+          <p class="subcopy">The model accepts one noisy training mistake and keeps a simple boundary between the two real groups.</p>
+          <svg class="chart" viewBox="0 0 520 350" role="img" aria-label="Two-dimensional generalized classification decision boundary ignoring a noisy class-1 point inside the class-0 region">
+            <defs><clipPath id="plot-good"><rect x="58" y="42" width="410" height="250" rx="5"/></clipPath></defs>
+            <rect width="520" height="350" rx="14" fill="#fbfdfb"/>
+            <g clip-path="url(#plot-good)">
+              <rect x="58" y="42" width="410" height="250" fill="#e9f1f6"/>
+              <path d="M286 42 L468 42 L468 292 L286 292 C292 247 281 206 290 166 C296 126 282 84 286 42 Z" fill="#fde9e3"/>
+              <path d="M286 42 C282 84 296 126 290 166 C281 206 292 247 286 292" fill="none" stroke="#172c35" stroke-width="4.5" stroke-linecap="round"/>
+              <g fill="#315a72" stroke="#fff" stroke-width="3">
+                <circle cx="102" cy="241" r="8"/><circle cx="136" cy="207" r="8"/><circle cx="174" cy="251" r="8"/><circle cx="211" cy="212" r="8"/><circle cx="240" cy="246" r="8"/>
+              </g>
+              <g fill="#f26b4f" stroke="#fff" stroke-width="3">
+                <circle cx="333" cy="229" r="8"/><circle cx="365" cy="179" r="8"/><circle cx="400" cy="235" r="8"/><circle cx="431" cy="151" r="8"/>
+              </g>
+              <circle cx="147" cy="112" r="10" fill="#f26b4f" stroke="#f4bf4f" stroke-width="7"/>
+            </g>
+            <line x1="58" x2="468" y1="292" y2="292" stroke="#8d9c96" stroke-width="2"/>
+            <line x1="58" x2="58" y1="42" y2="292" stroke="#8d9c96" stroke-width="2"/>
+            <text x="463" y="318" text-anchor="end" fill="#64736f" font-size="13">feature x₁ →</text>
+            <text x="22" y="176" transform="rotate(-90 22 176)" text-anchor="middle" fill="#64736f" font-size="13">feature x₂</text>
+            <text x="114" y="66" fill="#315a72" font-size="13" font-weight="850">model predicts class 0</text>
+            <text x="337" y="66" fill="#f26b4f" font-size="13" font-weight="850">model predicts class 1</text>
+            <text x="154" y="93" fill="#87620b" font-size="12" font-weight="850">noisy point remains one training error</text>
+            <text x="296" y="278" fill="#172c35" font-size="12" font-weight="900">simple decision boundary</text>
+          </svg>
+          <div class="model-eq">
+            <span class="eq-label">one neuron inside the MLP · simplified illustration</span>
+            <span class="eq-main">z<sub>generalized neuron</sub> = 1.2x₁ + 0.8x₂ − 0.2</span>
+            <p><b>Input weights:</b> W₁ = 1.2, W₂ = 0.8 &nbsp; · &nbsp; <b>Bias:</b> −0.2</p>
+            <p>This is also just one neuron, not the whole network. Compared with the overfitting illustration, the input weights are much more moderate, so this neuron is less sensitive to small noisy changes in x₁ and x₂. The bias remains the <b>same −0.2</b>.</p>
+          </div>
+          <span class="decision-badge good">Training mistakes: 1 · boundary stays simple</span>
+        </article>
+      </div>
+
+      <div class="dataset-wrap">
+        <h4>Dataset used in this case study</h4>
+        <p>The picture is a 2D visual explanation, but the highlighted noisy example still represents the same idea: one unusual point gets the opposite class label and bends the boundary when the model overfits.</p>
+        <table class="mini-table"><thead><tr><th>point</th><th>x₁</th><th>x₂</th><th>label</th><th>role</th></tr></thead><tbody>
+          <tr><td>P1</td><td>-2.8</td><td>-2.4</td><td>0</td><td>normal</td></tr>
+          <tr><td>P2</td><td>-2.2</td><td>-1.3</td><td>0</td><td>normal</td></tr>
+          <tr><td>P3</td><td>-1.5</td><td>-2.7</td><td>0</td><td>normal</td></tr>
+          <tr><td>P4</td><td>-0.8</td><td>-1.4</td><td>0</td><td>normal</td></tr>
+          <tr><td>P5</td><td>-0.2</td><td>-2.6</td><td>0</td><td>normal</td></tr>
+          <tr class="noise-row"><td>N</td><td>-1.8</td><td>1.4</td><td>1</td><td>noisy / unusual</td></tr>
+          <tr><td>P6</td><td>1.0</td><td>-2.1</td><td>1</td><td>normal</td></tr>
+          <tr><td>P7</td><td>1.6</td><td>-0.2</td><td>1</td><td>normal</td></tr>
+          <tr><td>P8</td><td>2.3</td><td>-2.3</td><td>1</td><td>normal</td></tr>
+          <tr><td>P9</td><td>2.8</td><td>0.8</td><td>1</td><td>normal</td></tr>
+        </tbody></table>
+      </div>
+
+      <div class="boundary-legend">
+        <span><i class="legend-swatch" style="background:#e9f1f6"></i> blue region = model predicts class 0</span>
+        <span><i class="legend-swatch" style="background:#fde9e3"></i> coral region = model predicts class 1</span>
+        <span><i class="legend-dot" style="background:#315a72"></i> true class 0</span>
+        <span><i class="legend-dot" style="background:#f26b4f"></i> true class 1</span>
+      </div>
+
+      <div class="boundary-summary">
+        <article><h4>Overfitted model</h4><p>It gets <strong>zero training mistakes</strong> by creating a narrow class-1 pocket around the noisy point. That extra bend makes the learned rule less reliable on nearby new data.</p></article>
+        <article><h4>Generalized model</h4><p>It accepts <strong>one noisy training mistake</strong>, keeps the boundary simple, and follows the broader pattern that is more likely to work on new data.</p></article>
+      </div>
+      <div class="weight-compare">
+        <div class="large"><span>Overfitted neuron · illustration</span><b>input weights = 12, 9</b></div>
+        <div class="normal"><span>Generalized neuron · illustration</span><b>input weights = 1.2, 0.8</b></div>
+      </div>
+      <div class="decision-callout"><strong>Main idea:</strong> the equations above show only <strong>one neuron inside the MLP</strong>, not the full architecture. In the overfitting illustration, that neuron has much larger input weights for x₁ and x₂, so small noisy variations in those features can strongly affect its output. Across many neurons and nonlinear activations, this can contribute to the highly bent decision boundary produced by the complete MLP. This brings us to the <strong>large-weight problem</strong> and why L1/L2 regularization discourage unnecessarily large weights.</div>
+
+      <div class="question" data-q="train-choice"><strong>Looking only at training error, which model appears better?</strong><div class="answers"><button class="answer" data-value="b" data-correct>Overfitted model — 0 training mistakes <span>→</span></button><button class="answer" data-value="a" data-hint="The generalized model deliberately leaves the noisy point wrong, so it has one training mistake.">Generalized model — 1 training mistake <span>→</span></button></div><p class="feedback"></p></div>
+      <button class="note-btn" data-note="overfit-large">ⓘ Does every overfit model have large weights?</button>
+      <button class="note-btn" data-note="bump">ⓘ Why can fitting one exception make the boundary bend?</button>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-3" data-lab="3">
+    <div class="lab-head"><span class="lab-num">03</span><div><span class="kicker">l2 regularization</span><h2>Square the weights</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>L2 regularization adds the square of the weights to the normal prediction loss.</strong> This gives unnecessarily large weights an extra cost during training.</p>
+      <div class="formula"><span>for one weight</span><b>L<sub>total</sub> = L<sub>data</sub> + λW²</b><p><b>L<sub>data</sub></b> = normal prediction loss · <b>W²</b> = weight-dependent penalty · <b>λ</b> = how strongly we apply the penalty.</p></div>
+      <div class="worked"><div class="worked-side"><span>worked numerical</span><b>One weight</b><p>Ldata = 4<br>W = 3<br>λ = 0.1</p></div><div class="worked-steps"><div class="step"><small>1</small><b>W² = 3² = 9</b></div><div class="step"><small>2</small><b>λW² = 0.1 × 9 = 0.9</b></div><div class="step"><small>3</small><b>Ltotal = 4 + 0.9 = 4.9</b></div><div class="takeaway">We did not add a random 0.9. The value 0.9 appeared <span>because W = 3.</span></div></div></div>
+      <div class="numeric-grid">
+        <article class="num-card" data-num="l2one1"><h3>Student numerical 1</h3><div class="givens">Ldata = 6 · W = 4 · λ = 0.05</div><div class="answer-line"><label>W²</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>λW²</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article>
+        <article class="num-card" data-num="l2one2"><h3>Student numerical 2</h3><div class="givens">Ldata = 3.2 · W = -5 · λ = 0.08</div><div class="answer-line"><label>W²</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>λW²</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article>
+      </div>
+      <button class="note-btn" data-note="why-square">ⓘ Student question: Why W²? Why not just add any number?</button>
+      <button class="note-btn" data-note="training-loss">ⓘ Can regularization make training loss look worse?</button>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-4" data-lab="4">
+    <div class="lab-head"><span class="lab-num">04</span><div><span class="kicker">l2 in a network</span><h2>Now add many weights</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>A neural network has many weights, so L2 adds the squares of all of them.</strong></p>
+      <div class="formula"><span>many weights</span><b>L<sub>total</sub> = L<sub>data</sub> + λ(W₁² + W₂² + W₃² + ...)</b></div>
+      <div class="multi-demo"><div><span class="kicker">worked example</span><div class="weight-chips"><span class="chip">W₁ = 2</span><span class="chip">W₂ = -3</span><span class="chip">W₃ = 1</span><span class="chip">λ = 0.1</span><span class="chip">Ldata = 5</span></div></div><div class="sum-box"><b>2² + (-3)² + 1² = 14</b><b style="margin-top:8px">penalty = 0.1 × 14 = 1.4</b><b style="margin-top:8px">Ltotal = 5 + 1.4 = 6.4</b><p>Negative weights are also penalized because squaring removes the sign.</p></div></div>
+      <div class="numeric-grid"><article class="num-card" data-num="l2multi"><h3>Student numerical · multiple weights</h3><div class="givens">W₁ = 1 · W₂ = -2 · W₃ = 3 · Ldata = 2.5 · λ = 0.2</div><div class="answer-line"><label>ΣW²</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>L2 penalty</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article><div class="sum-box"><span class="kicker">one idea to keep</span><b>Each weight contributes its own square.</b><p>A single very large weight contributes much more to the L2 penalty than several small weights.</p></div></div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-5" data-lab="5">
+    <div class="lab-head"><span class="lab-num">05</span><div><span class="kicker">how l2 changes gradient descent</span><h2>What changed in the GD formula?</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>You already know ordinary gradient descent:</strong> it changes W only according to the gradient coming from prediction loss. With L2 regularization, we do <strong>not replace gradient descent</strong>. We simply add one extra gradient term, <b>2λW</b>, that discourages unnecessarily large weights.</p>
+
+      <div class="gd-compare">
+        <article class="gd-compare-card old">
+          <span class="kicker">before regularization</span>
+          <h3>Ordinary gradient descent</h3>
+          <div class="gd-formula">
+            <div>g<sub>total</sub> = g<sub>data</sub></div>
+            <div style="margin-top:8px;font-size:14px">g<sub>data</sub> = ∂L<sub>data</sub>/∂W</div>
+            <div style="margin-top:8px">W<sub>new</sub> = W − αg<sub>data</sub></div>
+          </div>
+          <div class="gd-term"><b>g<sub>data</sub></b><p>is the gradient coming from prediction loss. It tells the model how to change W to fit the training data better.</p></div>
+          <div class="takeaway"><span>Gradient used by GD:</span> only g<sub>data</sub>.</div>
+        </article>
+        <article class="gd-compare-card reg">
+          <span class="kicker">after adding l2</span>
+          <h3>Gradient descent + L2</h3>
+          <div class="gd-formula">
+            <div>g<sub>total</sub> = g<sub>data</sub> + g<sub>penalty</sub></div>
+            <div style="margin-top:8px;font-size:14px">g<sub>data</sub> = ∂L<sub>data</sub>/∂W</div>
+            <div style="margin-top:5px;font-size:14px">g<sub>penalty</sub> = ∂(λW²)/∂W = 2λW</div>
+            <div style="margin-top:8px">W<sub>new</sub> = W − α(g<sub>data</sub> + g<sub>penalty</sub>)</div>
+          </div>
+          <div class="gd-term"><b>g<sub>data</sub></b><p>still tells the model how to fit the data.</p><b>g<sub>penalty</sub></b><p>comes from the L2 penalty. For L2, g<sub>penalty</sub> = 2λW, so it pushes unnecessarily large |W| toward zero.</p></div>
+          <div class="takeaway"><span>Gradient used by GD:</span> g<sub>data</sub> + g<sub>penalty</sub>.</div>
+        </article>
+      </div>
+
+      <div class="arrow-story">The change is simple: &nbsp; <b>ordinary GD uses g<sub>data</sub></b> &nbsp; → &nbsp; <b>L2 uses g<sub>data</sub> + g<sub>penalty</sub></b>, where g<sub>penalty</sub> = 2λW.</div>
+
+      <div class="formula" style="margin-top:24px">
+        <span>the missing link: gradient descent reacts to the gradient</span>
+        <b>L<sub>total</sub> = L<sub>data</sub> + λW²</b>
+        <p>When we add λW², the loss value at the current W becomes larger. But <strong>the optimizer does not reduce W just because the loss number became larger.</strong> The important point is that λW² depends on W, so it changes the gradient used in the GD update.</p>
+      </div>
+
+      <div class="gd-compare">
+        <article class="gd-compare-card old">
+          <span class="kicker">increase loss by a fixed number</span>
+          <h3>Adding +10 does not shrink W</h3>
+          <div class="gd-formula">L<sub>new</sub> = L<sub>data</sub> + 10</div>
+          <div class="gd-term"><b>gradient</b><p>g<sub>new</sub> = g<sub>data</sub> + 0 = g<sub>data</sub></p><b>why?</b><p>The number 10 does not depend on W, so its gradient with respect to W is zero.</p></div>
+          <div class="takeaway"><span>Result:</span> the loss number is larger, but the GD update for W is exactly the same.</div>
+        </article>
+        <article class="gd-compare-card reg">
+          <span class="kicker">increase loss with a weight-dependent term</span>
+          <h3>Adding λW² does shrink |W|</h3>
+          <div class="gd-formula">L<sub>new</sub> = L<sub>data</sub> + λW²</div>
+          <div class="gd-term"><b>gradient</b><p>g<sub>new</sub> = g<sub>data</sub> + 2λW</p><b>why?</b><p>λW² changes when W changes, so it contributes the new gradient term 2λW.</p></div>
+          <div class="takeaway"><span>Result:</span> the new term changes the GD update and pushes the magnitude |W| toward zero.</div>
+        </article>
+      </div>
+
+      <div class="arrow-story"><b>Cause → effect:</b> large |W| → large λW² → non-zero gradient 2λW → GD subtracts that gradient → |W| becomes smaller.</div>
+
+      <div style="margin-top:26px">
+        <span class="kicker">same numerical · side-by-side</span>
+        <h3 style="margin:4px 0 8px;font:700 25px Georgia,serif">Ordinary GD vs GD + L2</h3>
+        <p style="margin:0;color:var(--muted)">Use the same starting point in both cases: <strong>W = 5</strong>, <strong>α = 0.1</strong>, <strong>λ = 0.5</strong>, and the teaching loss <strong>L<sub>data</sub> = (W − 3)²</strong>.</p>
+      </div>
+
+      <div class="gd-compare" style="margin-top:16px">
+        <article class="gd-compare-card old">
+          <span class="kicker">ordinary gradient descent</span>
+          <h3>No regularization</h3>
+          <div class="worked-steps">
+            <div class="step"><small>1 · data loss</small><b>L<sub>data</sub> = (5 − 3)² = 4</b></div>
+            <div class="step"><small>2 · data gradient</small><b>g<sub>data</sub> = 2(W − 3) = 2(5 − 3) = 4</b></div>
+            <div class="step"><small>3 · total gradient</small><b>g<sub>total</sub> = g<sub>data</sub> = 4</b></div>
+            <div class="step"><small>4 · gd update</small><b>W<sub>new</sub> = 5 − 0.1(4) = 4.6</b></div>
+            <div class="step"><small>5 · after the step</small><b>New data loss = (4.6 − 3)² = 2.56</b></div>
+          </div>
+          <div class="takeaway"><span>Result:</span> W goes from <b>5 → 4.6</b> using only g<sub>data</sub>.</div>
+        </article>
+
+        <article class="gd-compare-card reg">
+          <span class="kicker">gradient descent + l2</span>
+          <h3>Add the weight penalty</h3>
+          <div class="worked-steps">
+            <div class="step"><small>1 · data loss</small><b>L<sub>data</sub> = (5 − 3)² = 4</b></div>
+            <div class="step"><small>2 · add l2 penalty</small><b>λW² = 0.5(5²) = 12.5, so L<sub>total</sub> = 4 + 12.5 = 16.5</b></div>
+            <div class="step"><small>3 · find both gradients</small><b>g<sub>data</sub> = 4 &nbsp;&nbsp; and &nbsp;&nbsp; g<sub>penalty</sub> = 2λW = 2(0.5)(5) = 5</b></div>
+            <div class="step"><small>4 · total gradient</small><b>g<sub>total</sub> = g<sub>data</sub> + g<sub>penalty</sub> = 4 + 5 = 9</b></div>
+            <div class="step"><small>5 · gd update</small><b>W<sub>new</sub> = 5 − 0.1(9) = 4.1</b></div>
+            <div class="step"><small>6 · after the step</small><b>New data loss = 1.21; new L2 penalty = 8.405; new total loss = 9.615</b></div>
+          </div>
+          <div class="takeaway"><span>Result:</span> W goes from <b>5 → 4.1</b>. The extra reduction comes from g<sub>penalty</sub> = 5.</div>
+        </article>
+      </div>
+
+      <div class="arrow-story"><b>Compare the same step:</b> ordinary GD gives <b>W = 4.6</b>, while GD + L2 gives <b>W = 4.1</b>. The difference comes from the extra penalty gradient <b>g<sub>penalty</sub> = 2λW</b>, not simply from making the loss number larger.</div>
+
+      <div class="arrow-story">So the logic is not <b>“higher loss automatically means smaller weight.”</b> The logic is <b>“weight-dependent penalty → extra gradient → GD update pushes |W| down.”</b></div>
+
+      <div class="numeric-grid">
+        <article class="num-card" data-num="l2gd"><h3>Student numerical · compare old GD and GD + L2</h3><div class="givens">W = 4 · α = 0.1 · gdata = 2 · λ = 0.2</div><p>First update W using ordinary GD. Then add the L2 gradient and update again.</p><div class="answer-line"><label>ordinary GD Wnew</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>L2 gradient = 2λW</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>GD + L2 Wnew</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article>
+        <div class="sum-box"><span class="kicker">remember the difference</span><b>Old GD: fit the data.</b><p>Wnew = W − αgdata</p><b style="margin-top:15px">GD + L2: fit the data + resist large weights.</b><p>Wnew = W − α(gdata + 2λW)</p><button class="note-btn" data-note="weight-decay">ⓘ Why is L2 called weight decay?</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-6" data-lab="6">
+    <div class="lab-head"><span class="lab-num">06</span><div><span class="kicker">l1 regularization</span><h2>Use absolute weight instead</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>L1 regularization adds the absolute value of the weight to the normal prediction loss.</strong> It cares about the size of the weight, not whether the weight is positive or negative.</p>
+      <div class="formula"><span>for one weight</span><b>L<sub>total</sub> = L<sub>data</sub> + λ|W|</b><p>|4| = 4 and |-4| = 4, so both have the same L1 penalty.</p></div>
+      <div class="worked"><div class="worked-side"><span>worked numerical</span><b>One weight</b><p>Ldata = 5<br>W = -4<br>λ = 0.1</p></div><div class="worked-steps"><div class="step"><small>1</small><b>|W| = |-4| = 4</b></div><div class="step"><small>2</small><b>λ|W| = 0.1 × 4 = 0.4</b></div><div class="step"><small>3</small><b>Ltotal = 5 + 0.4 = 5.4</b></div></div></div>
+      <div class="numeric-grid">
+        <article class="num-card" data-num="l1one1"><h3>Student numerical 1</h3><div class="givens">Ldata = 4 · W = 6 · λ = 0.05</div><div class="answer-line"><label>|W|</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>λ|W|</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article>
+        <article class="num-card" data-num="l1one2"><h3>Student numerical 2</h3><div class="givens">Ldata = 3.5 · W = -7 · λ = 0.1</div><div class="answer-line"><label>|W|</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>λ|W|</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article>
+      </div>
+
+      <div class="formula" style="margin-top:26px"><span>gradient descent with l1</span><b>g<sub>total</sub> = g<sub>data</sub> + λ sign(W)</b><p>For W &gt; 0, sign(W) = +1, so L1 adds +λ to the gradient. For W &lt; 0, sign(W) = −1, so L1 adds −λ. In both cases the GD update moves W toward zero.</p></div>
+
+      <div class="worked" style="margin-top:18px">
+        <div class="worked-side"><span>worked numerical</span><b>Ordinary GD vs GD + L1</b><p>W = 5<br>α = 0.1<br>g<sub>data</sub> = 4<br>λ = 2</p></div>
+        <div class="worked-steps">
+          <div class="step"><small>1</small><b>Ordinary GD: W<sub>new</sub> = 5 − 0.1(4) = 4.6</b></div>
+          <div class="step"><small>2</small><b>W is positive, so sign(W) = +1</b></div>
+          <div class="step"><small>3</small><b>L1 gradient = λ sign(W) = 2(+1) = 2</b></div>
+          <div class="step"><small>4</small><b>Total gradient = 4 + 2 = 6</b></div>
+          <div class="step"><small>5</small><b>GD + L1: W<sub>new</sub> = 5 − 0.1(6) = 4.4</b></div>
+          <div class="takeaway"><span>Compare:</span> ordinary GD gives <b>4.6</b>, while GD + L1 gives <b>4.4</b>. The extra L1 gradient gives an additional push toward zero.</div>
+        </div>
+      </div>
+
+      <div class="arrow-story">For L1, the extra push has almost constant size <b>λ</b> (away from W = 0). For L2, the extra push is <b>2λW</b>, so it becomes stronger when |W| is large.</div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-7" data-lab="7">
+    <div class="lab-head"><span class="lab-num">07</span><div><span class="kicker">l1 in a network</span><h2>Add absolute values of all weights</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>With many weights, L1 adds all absolute weight values.</strong></p>
+      <div class="formula"><span>many weights</span><b>L<sub>total</sub> = L<sub>data</sub> + λ(|W₁| + |W₂| + |W₃| + ...)</b></div>
+      <div class="multi-demo"><div><span class="kicker">worked example</span><div class="weight-chips"><span class="chip">W₁ = 2</span><span class="chip">W₂ = -3</span><span class="chip">W₃ = 1</span><span class="chip">λ = 0.1</span><span class="chip">Ldata = 5</span></div></div><div class="sum-box"><b>|2| + |-3| + |1| = 6</b><b style="margin-top:8px">penalty = 0.1 × 6 = 0.6</b><b style="margin-top:8px">Ltotal = 5 + 0.6 = 5.6</b></div></div>
+      <div class="numeric-grid"><article class="num-card" data-num="l1multi"><h3>Student numerical · multiple weights</h3><div class="givens">W₁ = -1 · W₂ = 4 · W₃ = -2 · Ldata = 2 · λ = 0.25</div><div class="answer-line"><label>Σ|W|</label><input data-key="a" inputmode="decimal"></div><div class="answer-line"><label>L1 penalty</label><input data-key="b" inputmode="decimal"></div><div class="answer-line"><label>Ltotal</label><input data-key="c" inputmode="decimal"></div><button class="check">Check</button><p class="num-feedback"></p></article><div class="sum-box"><span class="kicker">why l1 is different</span><b>L1 is more likely to make some weights exactly zero.</b><p>That is why L1 is often associated with sparse models. We will keep the detailed geometry outside the main lesson.</p></div></div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-8" data-lab="8">
+    <div class="lab-head"><span class="lab-num">08</span><div><span class="kicker">dropout</span><h2>Train many temporary pathways, not one fixed pathway</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>Dropout randomly switches off some hidden-neuron outputs during training.</strong> A switched-off neuron is not deleted; its output is temporarily treated as zero for that training pass. On the next pass, a different random set can be switched off.</p>
+      <div class="formula"><span>dropout probability</span><b>p = probability that a hidden neuron is switched OFF</b><p>If p = 0.5, each hidden neuron has a 50% chance of being off on a pass. It does <strong>not</strong> mean exactly half must be off every time.</p></div>
+
+      <div class="dropout-demo">
+        <h3>Student activity · run dropout through a small neural network</h3>
+        <p>This classroom demo redraws a new dropout mask once per epoch. In real training, frameworks commonly redraw the mask even more often, such as for each mini-batch.</p>
+
+        <div class="dropout-setting">
+          <label for="dropout-p">Choose dropout probability p</label>
+          <input id="dropout-p" type="range" min="0" max="0.8" step="0.1" value="0.5">
+          <b id="dropout-p-value">p = 0.5</b>
+        </div>
+
+        <div class="nn-stage" id="dropout-network" aria-label="Small neural network used for dropout demonstration">
+          <div class="nn-layer"><span>input layer</span><div class="nn-nodes"><div class="nn-node fixed">x₁</div><div class="nn-node fixed">x₂</div><div class="nn-node fixed">x₃</div></div></div>
+          <div class="nn-arrow">→</div>
+          <div class="nn-layer"><span>hidden layer 1</span><div class="nn-nodes"><div class="nn-node" data-dropout data-layer="h1">h₁₁</div><div class="nn-node" data-dropout data-layer="h1">h₁₂</div><div class="nn-node" data-dropout data-layer="h1">h₁₃</div><div class="nn-node" data-dropout data-layer="h1">h₁₄</div><div class="nn-node" data-dropout data-layer="h1">h₁₅</div></div></div>
+          <div class="nn-arrow">→</div>
+          <div class="nn-layer"><span>hidden layer 2</span><div class="nn-nodes"><div class="nn-node" data-dropout data-layer="h2">h₂₁</div><div class="nn-node" data-dropout data-layer="h2">h₂₂</div><div class="nn-node" data-dropout data-layer="h2">h₂₃</div><div class="nn-node" data-dropout data-layer="h2">h₂₄</div></div></div>
+          <div class="nn-arrow">→</div>
+          <div class="nn-layer"><span>output layer</span><div class="nn-nodes"><div class="nn-node fixed">ŷ₀</div><div class="nn-node fixed">ŷ₁</div></div></div>
+        </div>
+
+        <div class="demo-controls"><button class="action" id="dropout-run">Run next epoch</button><p class="demo-status" id="dropout-status">Before epoch 1, all hidden neurons are visible. Choose p, then run an epoch.</p></div>
+        <div class="mask-history" id="dropout-history"></div>
+      </div>
+
+      <div class="concept-flow">
+        <div class="concept-step"><span>01 · every epoch</span><b>A different subnetwork is used</b><p>The architecture is still the same, but a random subset of hidden outputs is temporarily zero.</p></div>
+        <div class="concept-step"><span>02 · benefit</span><b>Neurons cannot rely on the same partners</b><p>If one neuron is absent this time, other neurons must still learn useful representations. This reduces co-dependence.</p></div>
+        <div class="concept-step"><span>03 · prediction time</span><b>The full network is available</b><p>Standard dropout is turned off for normal evaluation or prediction, so the trained network uses all neurons.</p></div>
+      </div>
+
+      <div class="takeaway"><span>Why this can help:</span> dropout keeps changing the available pathway during training. That makes it harder for a particular group of neurons to memorize training-specific quirks together, so the learned representation can become more robust.</div>
+
+      <div class="dropout-compare">
+        <article class="compare-card dropout-side">
+          <span class="kicker">dropout</span><h3>Keep the large network, temporarily hide neurons</h3>
+          <p>Suppose a hidden layer contains 6 neurons and p = 0.5. We do <strong>not</strong> permanently turn it into a 3-neuron layer.</p>
+          <ul><li>Epoch 1 may use one subset.</li><li>Epoch 2 may use a different subset.</li><li>Across training, all 6 neurons can still learn.</li><li>At prediction time, the full layer is available.</li></ul>
+        </article>
+        <article class="compare-card small-side">
+          <span class="kicker">permanently smaller network</span><h3>Actually remove layers or neurons</h3>
+          <p>If we reduce a 6-neuron layer to 3 neurons, those missing neurons are gone in <strong>every</strong> epoch and at prediction time.</p>
+          <ul><li>The same smaller architecture is always used.</li><li>Model capacity is permanently reduced.</li><li>This can also reduce overfitting, but it may underfit if we remove too much capacity.</li><li>It is therefore not the same mechanism as dropout.</li></ul>
+        </article>
+      </div>
+
+      <div class="question" data-q="dropoutcapacity"><strong>Why is dropout not the same as simply reducing a 6-neuron hidden layer to 3 neurons?</strong><div class="answers"><button class="answer" data-correct>Dropout uses different temporary subsets while keeping all 6 neurons available across training <span>→</span></button><button class="answer" data-hint="With dropout the off neurons can return on the next pass. They are not permanently removed.">Because dropout permanently deletes 3 neurons after the first epoch <span>→</span></button><button class="answer" data-hint="A smaller network has less permanent capacity. Dropout keeps the larger architecture but randomly changes the active pathway during training.">There is no real difference; both always use the same 3 neurons <span>→</span></button></div><p class="feedback"></p></div>
+
+      <div class="question" data-q="dropoutq"><strong>What normally happens to dropout when we evaluate or make predictions with the trained network?</strong><div class="answers"><button class="answer" data-correct>Dropout is turned off; the full network is used <span>→</span></button><button class="answer" data-hint="The neurons were only temporarily switched off during training; they are not permanently deleted.">The same neurons stay permanently off <span>→</span></button><button class="answer" data-hint="Standard dropout is used during training, not randomly on every normal prediction.">We keep randomly switching neurons off <span>→</span></button></div><p class="feedback"></p></div>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-9" data-lab="9">
+    <div class="lab-head"><span class="lab-num">09</span><div><span class="kicker">batch normalization</span><h2>Keep neuron activations on a stable scale</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>Batch normalization (BN) normalizes the values produced by a neuron or feature across a mini-batch.</strong> A mini-batch is simply a small group of training examples processed together. BN first recenters these values around 0 and rescales them to roughly unit variance, then learns its own scale <b>γ</b> and shift <b>β</b>.</p>
+
+      <div class="formula"><span>main idea</span><b>z = (x − μ<sub>B</sub>) / √(σ²<sub>B</sub> + ε)</b><p>μ<sub>B</sub> is the mini-batch mean and σ²<sub>B</sub> is the mini-batch variance. The tiny ε only prevents division by zero.</p></div>
+      <div class="formula"><span>learned scale and shift</span><b>y = γz + β</b><p>Normalization does not force every layer to stay permanently at mean 0 and variance 1. The network can learn the useful scale and offset again through γ and β.</p></div>
+
+      <div class="worked" style="margin-top:18px">
+        <div class="worked-side"><span>worked example</span><b>Normalize one neuron's values across a mini-batch</b><p>Mini-batch values:<br><b>x = [0, 0, 2, 2]</b><br><br>For easy arithmetic, ignore ε here because the variance is not zero.</p></div>
+        <div class="worked-steps">
+          <div class="step"><small>1</small><b>Mean: μ<sub>B</sub> = (0 + 0 + 2 + 2) / 4 = 1</b></div>
+          <div class="step"><small>2</small><b>Variance: σ²<sub>B</sub> = [1 + 1 + 1 + 1] / 4 = 1</b></div>
+          <div class="step"><small>3</small><b>Standard deviation = √1 = 1</b></div>
+          <div class="step"><small>4</small><b>Normalize: z = (x − 1) / 1 = [−1, −1, 1, 1]</b></div>
+          <div class="step"><small>5</small><b>If γ = 2 and β = 0.5, then y = 2z + 0.5 = [−1.5, −1.5, 2.5, 2.5]</b></div>
+          <div class="takeaway"><span>Notice:</span> BN changes the <b>scale of activations</b>. It does not add a penalty such as λW² or λ|W| to the loss.</div>
+        </div>
+      </div>
+
+      <div class="concept-flow">
+        <div class="concept-step"><span>01 · why normalize?</span><b>Keep internal values from drifting to very different scales</b><p>When activations stay on a more stable scale, later layers receive values that are easier to work with.</p></div>
+        <div class="concept-step"><span>02 · training benefit</span><b>Optimization usually becomes easier and more stable</b><p>BN can make training less sensitive to initialization and often allows faster learning.</p></div>
+        <div class="concept-step"><span>03 · regularization effect</span><b>Mini-batch statistics add a little noise during training</b><p>Different mini-batches have slightly different means and variances. That randomness can give a mild regularizing effect, although BN's main purpose is training stabilization.</p></div>
+      </div>
+
+      <div class="takeaway"><span>Important distinction:</span> <b>L1/L2 act directly on weights.</b> <b>Dropout switches neuron outputs off.</b> <b>Batch normalization rescales activations.</b> These methods can all influence generalization, but they work in different ways.</div>
+
+      <div class="numeric-grid">
+        <article class="num-card" data-num="bncalc">
+          <h3>Student activity · normalize a mini-batch</h3>
+          <div class="givens">x = [1, 1, 3, 3] · γ = 1.5 · β = 0.5 · ignore ε for this easy example</div>
+          <div class="answer-line"><label>batch mean μ<sub>B</sub></label><input data-key="a" inputmode="decimal"></div>
+          <div class="answer-line"><label>batch variance σ²<sub>B</sub></label><input data-key="b" inputmode="decimal"></div>
+          <div class="answer-line"><label>first normalized value z₁</label><input data-key="c" inputmode="decimal"></div>
+          <div class="answer-line"><label>last normalized value z₄</label><input data-key="d" inputmode="decimal"></div>
+          <div class="answer-line"><label>first final value y₁</label><input data-key="e" inputmode="decimal"></div>
+          <div class="answer-line"><label>last final value y₄</label><input data-key="f" inputmode="decimal"></div>
+          <button class="check">Check</button><p class="num-feedback"></p>
+        </article>
+        <div class="sum-box"><span class="kicker">hint</span><b>Do it in this order:</b><p>1. Find the mean.<br>2. Find the variance.<br>3. Normalize with z = (x − μ<sub>B</sub>)/σ<sub>B</sub>.<br>4. Apply y = γz + β.</p></div>
+      </div>
+
+      <div class="question" data-q="bnq"><strong>Which statement best describes batch normalization?</strong><div class="answers"><button class="answer" data-correct>It normalizes intermediate activations using mini-batch statistics, then learns a scale γ and shift β <span>→</span></button><button class="answer" data-hint="That describes L2 regularization, not batch normalization.">It directly adds λW² to the loss so weights become smaller <span>→</span></button><button class="answer" data-hint="That describes dropout. Batch normalization does not randomly switch neurons off.">It randomly removes hidden neurons during every training pass <span>→</span></button></div><p class="feedback"></p></div>
+
+      <p style="margin:18px 0 0;color:var(--muted);font-size:14px"><strong>Evaluation note:</strong> during normal inference, BN typically uses running estimates of the mean and variance collected during training rather than recomputing them from each new prediction batch.</p>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-10" data-lab="10">
+    <div class="lab-head"><span class="lab-num">10</span><div><span class="kicker">early stopping</span><h2>Stop before the model starts memorizing</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <p class="theory"><strong>Early stopping watches validation performance while training continues.</strong> Training loss may keep improving, but if validation loss starts getting worse, the model may be beginning to overfit.</p>
+      <div class="concept-flow">
+        <div class="concept-step"><span>01</span><b>Train normally</b><p>After each epoch, calculate training and validation loss.</p></div>
+        <div class="concept-step"><span>02</span><b>Watch validation loss</b><p>We want it to decrease because validation data represents unseen examples.</p></div>
+        <div class="concept-step"><span>03</span><b>Keep the best point</b><p>When validation performance stops improving, stop and keep the best model.</p></div>
+      </div>
+
+      <div class="early-activity">
+        <h3>Student activity · where should we stop?</h3>
+        <p>For this simple activity, choose the epoch with the <strong>lowest validation loss</strong>.</p>
+        <table class="mini-table">
+          <thead><tr><th>Epoch</th><th>Training loss</th><th>Validation loss</th><th>What is happening?</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>0.90</td><td>0.95</td><td>both still high</td></tr>
+            <tr><td>2</td><td>0.70</td><td>0.72</td><td>both improving</td></tr>
+            <tr><td>3</td><td>0.55</td><td>0.58</td><td>both improving</td></tr>
+            <tr class="best-epoch"><td>4</td><td>0.43</td><td><strong>0.50</strong></td><td>best validation loss</td></tr>
+            <tr><td>5</td><td>0.35</td><td>0.56</td><td>train improves, validation worsens</td></tr>
+            <tr><td>6</td><td>0.29</td><td>0.64</td><td>overfitting is increasing</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:16px;font-weight:850">Choose the model checkpoint you would keep:</p>
+        <div class="epoch-choices" id="epoch-choices"><button class="epoch-btn" data-epoch="1">Epoch 1</button><button class="epoch-btn" data-epoch="2">Epoch 2</button><button class="epoch-btn" data-epoch="3">Epoch 3</button><button class="epoch-btn" data-epoch="4">Epoch 4</button><button class="epoch-btn" data-epoch="5">Epoch 5</button><button class="epoch-btn" data-epoch="6">Epoch 6</button></div>
+        <p class="epoch-feedback" id="epoch-feedback"></p>
+      </div>
+
+      <div class="takeaway"><span>Notice:</span> from epoch 4 to 6, <strong>training loss keeps decreasing</strong> but <strong>validation loss increases</strong>. So “lower training loss” does not always mean “better model.”</div>
+      <div class="question" data-q="earlyq"><strong>Why do we not simply train until the training loss is as small as possible?</strong><div class="answers"><button class="answer" data-correct>Because validation performance can get worse while training loss keeps falling <span>→</span></button><button class="answer" data-hint="Training loss is expected to decrease as the optimizer fits the training examples.">Because training loss should increase after every epoch <span>→</span></button><button class="answer" data-hint="Early stopping does not require all weights to become zero.">Because all weights must become zero before we stop <span>→</span></button></div><p class="feedback"></p></div>
+      <p style="margin:18px 0 0;color:var(--muted);font-size:14px"><strong>Real training note:</strong> practical early stopping often waits for several epochs without validation improvement (called <em>patience</em>) and then restores the best checkpoint.</p>
+    </div>
+  </section>
+
+  <section class="lab" id="lab-11" data-lab="11">
+    <div class="lab-head"><span class="lab-num">11</span><div><span class="kicker">final comparison</span><h2>L1 versus L2</h2></div><span class="done">✓ complete</span></div>
+    <div class="card pad">
+      <table class="compare"><thead><tr><th>Feature</th><th>L1</th><th>L2</th></tr></thead><tbody><tr><td>Penalty</td><td>λ Σ|W|</td><td>λ ΣW²</td></tr><tr><td>Uses</td><td>absolute weight</td><td>squared weight</td></tr><tr><td>Main effect</td><td>pushes weights toward zero</td><td>smoothly discourages large weights</td></tr><tr><td>Exact zeros</td><td>more common</td><td>less common</td></tr><tr><td>Sparse model</td><td>more likely</td><td>usually less sparse</td></tr></tbody></table>
+      <div class="question" data-q="final1"><strong>Which method uses squared weights?</strong><div class="answers"><button class="answer" data-correct>L2 <span>→</span></button><button class="answer" data-hint="L1 uses absolute values.">L1 <span>→</span></button></div><p class="feedback"></p></div>
+      <div class="completion" id="completion"><b>worksheet complete</b><h3>You can now explain L1, L2, dropout, batch normalization and early stopping—and how their mechanisms differ.</h3></div>
+    </div>
+  </section>
+
+  <section class="reference"><div><span class="kicker">pocket reference</span><h2>Seven ideas to keep</h2></div><dl><div><dt>Regularization</dt><dd>A broad family of methods for reducing overfitting; not all of them shrink weights directly.</dd></div><div><dt>Large weights</dt><dd>Can make a model react strongly to small input changes and create sharp local decisions.</dd></div><div><dt>L2</dt><dd>Add λΣW². Its extra gradient is proportional to W, so large weights receive a stronger push.</dd></div><div><dt>L1</dt><dd>Add λΣ|W|. It is more likely than L2 to produce exact zero weights.</dd></div><div><dt>Dropout</dt><dd>Temporarily switches off random neuron outputs during training so learning is not tied to one exact pathway.</dd></div><div><dt>Batch normalization</dt><dd>Normalizes intermediate activations with mini-batch statistics, then learns a scale γ and shift β. Its batch noise can add a mild regularizing effect.</dd></div><div><dt>Early stopping</dt><dd>Stops training when validation performance stops improving, before continued fitting increases overfitting.</dd></div></dl></section>
+  <footer><span>λ</span><p>All data and values in this worksheet are small, deterministic teaching examples.</p><a href="#lab-1">Back to the first section ↑</a></footer>
+</main>
+
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+<aside class="drawer" id="drawer" aria-hidden="true"><div class="drawer-top"><strong id="drawer-title">Side note</strong><button class="drawer-close" id="drawer-close">✕</button></div><div class="drawer-body" id="drawer-body"></div></aside>
+
+<script>
+(()=>{
+  const NS='http://www.w3.org/2000/svg';
+  const solved=new Set();
+  const activityIds=['method','train-choice','l2one1','l2one2','l2multi','l2gd','l1one1','l1one2','l1multi','dropoutmask','dropoutcapacity','dropoutq','bncalc','bnq','earlypick','earlyq','finals'];
+  function mark(id){solved.add(id);updateProgress()}
+  function updateProgress(){
+    const finals=['final1'].every(x=>solved.has(x));
+    if(finals)solved.add('finals'); else solved.delete('finals');
+    const count=activityIds.filter(x=>solved.has(x)).length,pct=Math.round(count/activityIds.length*100);
+    document.querySelector('#progress-copy').textContent=`${count} of ${activityIds.length} activities`;
+    document.querySelector('#progress-percent').textContent=pct+'%';document.querySelector('#progress-bar').style.width=pct+'%';
+    const allDone=activityIds.every(x=>solved.has(x));
+    document.querySelector('#completion').classList.toggle('show',allDone);
+    document.querySelectorAll('.lab').forEach(l=>{const n=+l.dataset.lab;let done=false;if(n===1)done=solved.has('method');if(n===2)done=solved.has('train-choice');if(n===3)done=solved.has('l2one1')&&solved.has('l2one2');if(n===4)done=solved.has('l2multi');if(n===5)done=solved.has('l2gd');if(n===6)done=solved.has('l1one1')&&solved.has('l1one2');if(n===7)done=solved.has('l1multi');if(n===8)done=solved.has('dropoutmask')&&solved.has('dropoutcapacity')&&solved.has('dropoutq');if(n===9)done=solved.has('bncalc')&&solved.has('bnq');if(n===10)done=solved.has('earlypick')&&solved.has('earlyq');if(n===11)done=finals;l.classList.toggle('complete',done)});
+  }
+  document.querySelectorAll('.question').forEach(q=>q.querySelectorAll('.answer').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.disabled)return;const f=q.querySelector('.feedback');
+    if(btn.hasAttribute('data-correct')){btn.classList.add('correct');btn.querySelector('span').textContent='✓';q.querySelectorAll('.answer').forEach(b=>b.disabled=true);f.textContent='Correct.';f.className='feedback show success';mark(q.dataset.q)}
+    else{btn.classList.add('wrong');btn.disabled=true;f.textContent=btn.dataset.hint||'Try again.';f.className='feedback show'}
+  })));
+
+  // Dropout student activity: choose p, then redraw a fresh random hidden-neuron mask each epoch.
+  const pSlider=document.querySelector('#dropout-p'),pValue=document.querySelector('#dropout-p-value'),history=document.querySelector('#dropout-history');
+  let dropoutPass=0;
+  function resetDropoutView(){
+    dropoutPass=0;
+    document.querySelectorAll('#dropout-network [data-dropout]').forEach(n=>n.classList.remove('off'));
+    history.innerHTML='';
+    document.querySelector('#dropout-status').textContent='Before epoch 1, all hidden neurons are visible. Choose p, then run an epoch.';
+  }
+  pSlider.addEventListener('input',()=>{pValue.textContent=`p = ${(+pSlider.value).toFixed(1)}`;resetDropoutView()});
+  document.querySelector('#dropout-run').addEventListener('click',()=>{
+    const p=+pSlider.value,nodes=[...document.querySelectorAll('#dropout-network [data-dropout]')];
+    const byLayer={};nodes.forEach(n=>(byLayer[n.dataset.layer]??=[]).push(n));
+    const offNames=[];
+    Object.values(byLayer).forEach(layer=>{
+      let mask=layer.map(()=>Math.random()<p);
+      if(mask.every(Boolean) && p<1){mask[Math.floor(Math.random()*mask.length)]=false}
+      layer.forEach((n,i)=>{n.classList.toggle('off',mask[i]);if(mask[i])offNames.push(n.textContent)});
+    });
+    dropoutPass++;
+    const off=offNames.length,total=nodes.length;
+    document.querySelector('#dropout-status').textContent=`Epoch ${dropoutPass} · p=${p.toFixed(1)} · ${off} of ${total} hidden neurons are temporarily OFF. Run again to draw a new random subset.`;
+    const row=document.createElement('div');row.className='mask-row';row.innerHTML=`<b>Epoch ${dropoutPass}:</b> OFF → ${offNames.length?offNames.join(', '):'none'}`;history.prepend(row);while(history.children.length>4)history.removeChild(history.lastChild);
+    mark('dropoutmask');
+  });
+
+  // Early-stopping student activity
+  document.querySelectorAll('.epoch-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.disabled)return;
+    const epoch=+btn.dataset.epoch,f=document.querySelector('#epoch-feedback');
+    if(epoch===4){
+      btn.classList.add('correct');
+      btn.textContent='Epoch 4 ✓';
+      document.querySelectorAll('.epoch-btn').forEach(b=>b.disabled=true);
+      f.textContent='Correct. Epoch 4 has the lowest validation loss (0.50), so this is the best checkpoint in this simple example.';
+      f.className='epoch-feedback show success';
+      mark('earlypick');
+    }else{
+      btn.classList.add('wrong');btn.disabled=true;
+      f.textContent=epoch<4?'Not yet. Validation loss is still improving after this epoch.':'Too late. Training loss is lower, but validation loss has already started rising.';
+      f.className='epoch-feedback show';
+    }
+  }));
+
+  const notes={
+    'all-methods':{title:'Do all regularization methods make weights smaller?',body:`<p><strong>No.</strong> Regularization is the broad idea of controlling overfitting. Different methods do that in different ways.</p><h3>L1 and L2</h3><p>These directly add a penalty based on the weights. Because the added term depends on W, it changes the weight gradient.</p><div class="math">L1: + λ|W| &nbsp;&nbsp; L2: + λW²</div><h3>Dropout</h3><p>Dropout randomly removes some neurons during training. The network is forced to avoid depending too heavily on one exact pathway.</p><h3>Early stopping</h3><p>Early stopping watches validation performance and stops training before continued fitting starts hurting unseen-data performance.</p><h3>Batch normalization</h3><p>Batch normalization mainly helps training by normalizing intermediate activations. Because mini-batch statistics vary during training, it can also create a mild regularizing effect. But its main definition is not “push the weights to zero.”</p><div class="mini"><strong>Keep this:</strong> regularization ≠ only weight shrinking. Weight shrinking is specifically the story we study with L1 and L2.</div>`},
+    'overfit-large':{title:'Does every overfit model have large weights?',body:`<p>No. Overfitting simply means the model fits training-specific details that do not generalize well. A deep network can overfit in many ways.</p><p>Large weights are <strong>one possible mechanism</strong>. In this case study the model needs a very sharp local response to classify one unusual point differently from its nearby neighbors. Large coefficients make that sharp response possible.</p><p>That makes this case a good example for understanding why L1 and L2 can help—but you should not use “large weight” as a universal test for overfitting.</p>`},
+    'bump':{title:'Why can fitting one exception make the boundary bend?',body:`<p>A flexible neural network can combine several neurons to create a small local region with a different prediction from the surrounding area.</p><p>In the graph, most points on the left belong to class 0. But one noisy training sample at <strong>x₁ = -1.8</strong> is labelled class 1. To classify that single point correctly while leaving the nearby class-0 training points unchanged, the model has to make a narrow class-1 pocket around it.</p><p>That extra local shape usually requires stronger parameter changes than the simple boundary needs. The exact weights are not important here—the visual point is that the model becomes <strong>more complicated just to memorize one exception.</strong></p><div class="mini"><strong>Keep this:</strong> the generalized model accepts one training error; the overfitted model bends the boundary to remove it.</div>`},
+    'why-square':{title:'Why W²? Why not just add any number?',body:`<p>This is the key point: we are <strong>not trying to increase the loss by any amount.</strong> We want to add something that changes when W changes.</p><h3>If we add a constant</h3><div class="math">Ltotal = Ldata + 5</div><p>W = 5 → added part = 5<br>W = 3 → added part = 5<br>W = 1 → added part = 5</p><p>Reducing W does not reduce the added part. Its derivative is:</p><div class="math">d(5)/dW = 0</div><p>So the optimizer receives no new weight direction from that +5.</p><h3>If we add 0.1W²</h3><p>W = 5 → 0.1W² = 2.5<br>W = 3 → 0.1W² = 0.9<br>W = 1 → 0.1W² = 0.1</p><p>Now a smaller |W| gives a smaller penalty. More importantly, the term contributes a gradient:</p><div class="math">d(λW²)/dW = 2λW</div><div class="mini"><strong>Verdict:</strong> the useful part is not “loss became bigger.” The useful part is “we added a weight-dependent term that contributes a weight gradient.”</div>`},
+    'training-loss':{title:'Can regularization make training loss look worse?',body:`<p>Yes. That is not automatically a problem.</p><p>An unregularized model may use extreme parameters to get an extremely small training error. A regularized model may accept a little more training error in exchange for a less extreme solution that works better on unseen data.</p><p>So the real goal is not “smallest possible training loss.” The goal is <strong>good generalization.</strong></p>`},
+    'weight-decay':{title:'Why is L2 called weight decay?',body:`<p>Start from the L2 update:</p><div class="math">Wnew = W − α(gdata + 2λW)</div><p>Rearrange it:</p><div class="math">Wnew = (1 − 2αλ)W − αgdata</div><p>The factor <strong>(1 − 2αλ)</strong> is slightly smaller than 1. So each update contains a small multiplicative shrinkage of W in addition to the ordinary data-gradient update.</p><p>Example: if α = 0.1 and λ = 0.1, then 1 − 2αλ = 0.98. Ignoring the data gradient for a moment, W behaves like:</p><div class="math">W → 0.98W</div><p>That repeated shrinkage is why this form is often described as <strong>weight decay</strong>.</p>`}
+  };
+  const drawer=document.querySelector('#drawer'),back=document.querySelector('#drawer-backdrop');
+  function openNote(k){const n=notes[k];document.querySelector('#drawer-title').textContent=n.title;document.querySelector('#drawer-body').innerHTML=n.body;drawer.classList.add('show');back.classList.add('show');drawer.setAttribute('aria-hidden','false')}
+  function closeNote(){drawer.classList.remove('show');back.classList.remove('show');drawer.setAttribute('aria-hidden','true')}
+  document.querySelectorAll('.note-btn').forEach(b=>b.addEventListener('click',()=>openNote(b.dataset.note)));document.querySelector('#drawer-close').addEventListener('click',closeNote);back.addEventListener('click',closeNote);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNote()});
+
+  // Case-study data shared by later visuals
+  const train=[[-3,0],[-2,0],[-1.8,1],[-1,0],[1,1],[2,1],[3,1]], val=[[-2.4,0],[-1.85,0],[-1.75,0],[-1.3,0],[.8,1],[1.5,1],[2.5,1]];
+  const relu=x=>Math.max(0,x),score=(x,overfit)=>2*x+(overfit?22*(relu(x+2.05)-2*relu(x+1.8)+relu(x+1.55)):0);
+
+  // Numericals
+  const numericAnswers={l2one1:{a:16,b:.8,c:6.8},l2one2:{a:25,b:2,c:5.2},l2multi:{a:14,b:2.8,c:5.3},l2gd:{a:3.8,b:1.6,c:3.64},l1one1:{a:6,b:.3,c:4.3},l1one2:{a:7,b:.7,c:4.2},l1multi:{a:7,b:1.75,c:3.75},bncalc:{a:2,b:1,c:-1,d:1,e:-1,f:2}};
+  document.querySelectorAll('.num-card').forEach(card=>card.querySelector('.check').addEventListener('click',()=>{const key=card.dataset.num,ans=numericAnswers[key],fields=[...card.querySelectorAll('input')];let ok=true,bad=[];fields.forEach(inp=>{const k=inp.dataset.key,v=parseFloat(inp.value);if(!Number.isFinite(v)||Math.abs(v-ans[k])>1e-6){ok=false;bad.push(k.toUpperCase())}});const f=card.querySelector('.num-feedback');if(ok){f.className='num-feedback ok';f.textContent='✓ Correct. All steps are right.';fields.forEach(i=>i.disabled=true);card.querySelector('.check').disabled=true;mark(key)}else{f.className='num-feedback no';f.textContent='Check '+bad.join(', ')+'. Keep the calculation step-by-step.'}}));
+
+  document.querySelector('#print').addEventListener('click',()=>window.print());document.querySelector('#reset').addEventListener('click',()=>location.reload());updateProgress();
+})();
+</script>
+</body>
+</html>

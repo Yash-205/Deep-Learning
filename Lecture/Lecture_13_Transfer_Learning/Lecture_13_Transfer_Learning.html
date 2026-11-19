@@ -1,0 +1,854 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="A visual lecture worksheet on pretrained models, feature extraction, freezing layers, data augmentation, and the motivation for vision transformers."><title>Transfer Learning · Borrow, Adapt, See Further</title><style>
+/* Keep the collection's CNN worksheet as the shared visual baseline. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{--paper:#f6f4ed;--white:#fffefa;--ink:#182e2b;--muted:#5f7069;--teal:#12655b;--deep:#124b47;--mint:#d8e9da;--line:#d8ddd2;--orange:#bb5135;--gold:#e6bd65;--sans:'DM Sans',system-ui,sans-serif;--display:'Manrope',system-ui,sans-serif;--mono:'DM Mono',monospace;--radius:18px}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:108px}body{margin:0;background:var(--paper);font:16px/1.6 var(--sans);color:var(--ink)}button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid var(--line);border-radius:7px;padding:8px 12px;background:var(--white);color:var(--ink)}button:hover{background:#e8eee4;border-color:#9bafa1}a{color:var(--teal)}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,canvas:focus-visible{outline:3px solid #b27715;outline-offset:4px}::selection{background:var(--gold);color:var(--ink)}.skip{position:fixed;top:-70px;left:20px;z-index:100;background:white;padding:10px}.skip:focus{top:10px}.topbar{height:86px;position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:32px;padding:0 38px;border-bottom:1px solid var(--line);background:rgba(246,244,237,.97);backdrop-filter:blur(14px)}.brand{text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:14px;font-size:12px;font-weight:800;letter-spacing:.12em;line-height:1.5}.logo{background:var(--deep);color:#e1edcb;width:41px;height:41px;display:grid;place-items:center;border-radius:50%;font:30px Georgia}.brand-sub{display:block;font-size:12px;font-weight:400;letter-spacing:0;color:var(--muted)}.progress{width:260px;margin-left:auto}.progress>div{display:flex;justify-content:space-between;font-size:12px;gap:12px}.progress progress{display:block;width:100%;height:5px;margin-top:9px;appearance:none;border:none;background:var(--line);border-radius:8px;overflow:hidden}.progress progress::-webkit-progress-bar{background:var(--line)}.progress progress::-webkit-progress-value{background:var(--teal);transition:width .3s}.progress progress::-moz-progress-bar{background:var(--teal)}.text-btn{font-size:12px;background:transparent;border:0;padding:8px}.layout{display:grid;grid-template-columns:245px minmax(0,1fr);max-width:1580px;margin:auto}.sidebar{position:sticky;top:86px;height:calc(100vh - 86px);padding:42px 26px 24px 32px;border-right:1px solid var(--line);display:flex;flex-direction:column}.eyebrow{font:500 12px/1.5 var(--mono);letter-spacing:.09em;color:var(--teal)}.sidebar>.eyebrow{font-size:11px;color:var(--muted)}nav{margin-top:24px;display:flex;flex-direction:column;gap:8px}nav a{text-decoration:none;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);padding:12px 9px;margin-left:-9px;border-radius:7px;line-height:1.4}nav a span{font:12px var(--mono);color:#627568}nav a.active{background:#e1e8d9;color:var(--ink);font-weight:700}nav a:hover{background:#e9ede2}nav a i{margin-left:auto;width:6px;height:6px;border-radius:50%;background:transparent}nav a.done i{background:var(--teal)}.sidebar-note{margin-top:auto;padding-top:40px}.tiny-cross{font:34px var(--mono);color:var(--orange)}.sidebar-note p{font:500 18px/1.5 var(--display)}.sidebar-note small{color:var(--muted);font-size:12px}.source-link{font-size:12px;margin-top:30px;text-decoration:none}main{padding:44px 5vw 0;min-width:0;max-width:1260px}.intro{position:relative;padding:8px 0 26px}.intro h1{font:500 clamp(46px,5.5vw,78px)/1.04 var(--display);letter-spacing:-.06em;margin:16px 0 20px;max-width:700px}.intro h1 em{font:italic 1.1em Georgia,serif;color:var(--teal);letter-spacing:-.055em}.title-dot{font:20px var(--sans);color:var(--orange);vertical-align:baseline;margin-left:12px}.intro>p{position:absolute;right:0;bottom:72px;color:var(--muted);font-size:16px;line-height:1.7;max-width:280px}.intro-meta{display:flex;gap:20px;flex-wrap:wrap;font:12px var(--mono);color:var(--muted)}.intro-meta span+span:before{content:'·';margin-right:20px}.orientation{display:grid;grid-template-columns:1fr 1.4fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;gap:20px;margin-bottom:54px}.orientation b{display:block;font:11px var(--mono);color:var(--orange);letter-spacing:.08em;margin-bottom:7px}.orientation span{font-size:13px;line-height:1.4;display:block}.lab{margin-bottom:84px;scroll-margin-top:108px}.section-heading{display:flex;align-items:start;gap:19px;margin-bottom:25px}.section-number{flex-shrink:0;font:14px var(--mono);border:1px solid #bcc7bb;border-radius:50%;width:40px;height:40px;display:grid;place-items:center;margin-top:3px}h2{font:500 clamp(29px,3.2vw,42px)/1.15 var(--display);letter-spacing:-.045em;margin:9px 0 0}h3{font:600 21px/1.3 var(--display);letter-spacing:-.035em;margin:8px 0 20px}.completion{display:none;margin-left:auto;white-space:nowrap;background:var(--mint);border-radius:20px;padding:6px 11px;font:12px var(--mono);color:var(--teal)}.lab.complete .completion{display:block}.minute{border:1px solid #ccdcca;background:#e7edde;padding:25px 28px;border-radius:var(--radius);margin-bottom:24px}.minute p{margin:10px 0 18px;max-width:900px;line-height:1.7}.equation{font:22px/1.65 Georgia,serif;color:var(--deep)}.minute .equation{border-top:1px solid #ccd6c6;padding-top:14px}.equation span{display:block;font:12px/1.6 var(--mono);color:var(--muted);margin-top:4px}.experiment{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(240px,1fr);background:var(--white);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.visual-pane{min-width:0;padding:25px;border-right:1px solid var(--line)}.pane-heading{display:flex;justify-content:space-between;gap:10px;align-items:start}.pane-heading .eyebrow{font-size:10px}.pane-heading h3{margin-bottom:15px}.live-label{font:10px var(--mono);letter-spacing:.05em;color:var(--teal);display:flex;gap:5px;align-items:center}.live-label:before{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--teal)}.scene{display:block;width:100%;height:300px;background:#eef1e7;border:1px solid #e4e8dd;border-radius:10px;cursor:grab;touch-action:pan-y}.scene:active{cursor:grabbing}.scene-tools{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-top:9px;flex-wrap:wrap}.scene-tools span{margin-right:auto;color:var(--muted);font-size:11px}.scene-tools button{font-size:11px;padding:4px 7px;background:transparent}.visual-note{font-size:12px;line-height:1.6;color:var(--muted);margin:12px 0}.controls{padding:26px 23px;background:#fbfaf5}.controls>.eyebrow{font-size:11px}.controls h3{margin-bottom:25px}label{display:block;font-size:14px;font-weight:600;line-height:1.5;margin:21px 0 9px}output{float:right;font:12px/1.75 var(--mono);color:var(--teal);margin-left:5px}select{width:100%;border:1px solid #cbd3c8;border-radius:7px;background:var(--white);padding:10px 28px 10px 10px;color:var(--ink);font-size:14px}input[type=range]{display:block;width:100%;accent-color:var(--teal);height:20px;margin:8px 0 0}input[type=checkbox]{accent-color:var(--teal);width:18px;height:18px;flex:none}.switch-row{display:flex;align-items:start;gap:9px;font-weight:400}.switch-row input{margin-top:2px}.status{border:1px solid #cbdccd;background:#e7eee1;color:var(--deep);border-radius:8px;padding:13px;margin-top:22px;font-size:13px;line-height:1.6}.status strong{display:block;font-size:14px;margin-bottom:4px}.status.warn{border-color:#e8c8ad;background:#f6ead9;color:#794722}.control-note,.range-note{font-size:12px;line-height:1.65;color:var(--muted)}.range-note{font-size:10px;margin-top:4px}.try{border-top:1px dashed #ccd3c6;margin-top:23px;padding-top:16px}.try>b{font:11px var(--mono);letter-spacing:.08em;color:var(--orange)}.try p{font-size:13px;line-height:1.65;margin:9px 0}.try small{display:block;font-size:11px;line-height:1.6;color:var(--muted)}.try button{font-size:12px;margin:4px 2px 0 0;padding:5px 7px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:22px}.metrics>div{min-width:0;border-top:1px solid var(--line);padding-top:10px}.metrics small{display:block;font:10px/1.5 var(--mono);text-transform:uppercase;color:var(--muted)}.metrics b{display:block;font:18px/1.7 var(--mono);overflow-wrap:anywhere}.chart{margin-top:20px}.chart svg{width:100%;display:block;overflow:visible}.chart-caption{font-size:11px;color:var(--muted);margin:5px 0}.chart-legend{display:flex;gap:16px;font-size:11px;flex-wrap:wrap;align-items:center}.chart-legend span:before{content:'';display:inline-block;width:15px;height:3px;background:var(--teal);vertical-align:middle;margin-right:6px}.chart-legend span.coral:before{background:var(--orange)}.neuron-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:18px}.neuron-grid>div{background:#f3f3eb;border-radius:6px;text-align:center;padding:9px 1px}.neuron-grid small{display:block;font:10px var(--mono);color:var(--muted)}.neuron-grid b{font:13px var(--mono);display:block;margin-top:7px}.neuron-grid .mini-bar{height:3px;max-width:90%;min-width:3px;background:var(--orange);display:block;margin:9px auto 0}.quiz{display:grid;grid-template-columns:1fr 1fr;gap:26px;padding-top:28px}.quiz[data-quiz='4']{grid-template-columns:1fr}.question{min-width:0}.q-label{font:11px var(--mono);letter-spacing:.07em;color:var(--orange);margin-bottom:10px}.question h3{font:500 17px/1.6 var(--sans);letter-spacing:0;margin:0 0 15px}.answers{display:flex;flex-direction:column;gap:8px}.answer{font-size:14px;line-height:1.5;display:flex;align-items:center;gap:12px;text-align:left;padding:12px 13px;background:#fffefa;border-radius:8px}.answer .letter{color:var(--muted);font:12px var(--mono);flex:none}.answer.correct{border-color:var(--teal);background:#e5eddd}.answer.correct .letter{color:var(--teal)}.answer.wrong{border-color:var(--orange);background:#f8ebe4}.feedback{font-size:13px;line-height:1.65;margin:12px 0 0;padding:12px;border-left:3px solid var(--orange);background:#f9ece2}.feedback.success{border-color:var(--teal);background:#e7edde}.question .hint{margin-top:10px;border:0;background:transparent;border-radius:0;font-size:12px;color:var(--muted)}.hint summary{padding:4px 0;font-size:12px}.hint p{margin:4px 0 0;font-size:13px}details{margin-top:25px;border:1px solid var(--line);background:#f0f1e9;border-radius:10px}summary{cursor:pointer;padding:16px 20px;font-size:14px;font-weight:700}summary span{font-weight:400;color:var(--muted);margin-left:12px}.fold-body{padding:0 24px 20px;font-size:15px}.fold-body p{margin:10px 0 16px}.fold-body pre{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);background:#fffefa;border-radius:8px;padding:18px;font-size:12px}.diagnostic-card{background:var(--deep);color:#f3f5e6;padding:32px;border-radius:var(--radius)}.diagnostic-card .eyebrow{color:#d8e5b9}.diagnostic-card h3{font-size:32px;font-weight:500;margin-top:15px}.diagnostic-card p{color:#e2e9dc;max-width:780px}.case-metrics{display:grid;grid-template-columns:repeat(3,1fr);margin:25px 0;border-block:1px solid #47716a;padding:20px 0;gap:15px}.case-metrics span{display:block;font:10px var(--mono);color:#c2d9ca;margin-bottom:8px}.case-metrics b{font:23px var(--mono);color:#eff1cf}.reference-table{margin-top:32px;overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}caption{text-align:left;font:600 23px var(--display);letter-spacing:-.025em;margin-bottom:20px}th{text-align:left;background:#e5eadf;color:var(--teal);font-weight:500;font-size:12px}th,td{padding:15px 12px;border-bottom:1px solid var(--line);vertical-align:top}td:first-child{font-weight:700;white-space:nowrap}footer{border-top:1px solid var(--line);padding:30px 0 22px;font-size:13px;color:var(--muted)}footer>p{max-width:880px}.reference-links{display:flex;flex-wrap:wrap;gap:10px 24px;margin:20px 0}.reference-links a{font-size:12px}.footer-bottom{border-top:1px solid var(--line);margin-top:30px;padding-top:20px;display:flex;gap:20px;align-items:center;justify-content:space-between;font-size:11px}.footer-bottom button{font-size:11px}.finish{border:1px solid #bdcfb5;border-radius:18px;background:var(--mint);padding:32px;margin-bottom:50px}dialog{max-width:440px;width:calc(100% - 32px);padding:26px;border:1px solid var(--line);border-radius:15px;background:var(--white);color:var(--ink)}dialog::backdrop{background:#102a2666}dialog h2{font-size:26px}dialog p{font-size:14px}dialog>div{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}dialog button{font-size:13px}.primary{background:var(--teal);color:white}.primary:hover{background:var(--deep);color:white}[hidden]{display:none!important}
+.visual-guide{border-top:1px solid var(--line);padding-top:16px;margin:18px 0 24px}.visual-guide h4{font:600 18px/1.4 var(--display);margin:0 0 10px}.scene-legend{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 16px}.guide-steps{padding:0;list-style:none;counter-reset:guide;display:grid;gap:8px;margin:16px 0}.guide-steps li{counter-increment:guide;position:relative;padding:11px 12px 11px 39px;font-size:13px;line-height:1.7;border:1px solid var(--line);border-radius:8px;background:#f8f9f2}.guide-steps li:before{content:counter(guide);position:absolute;left:13px;top:13px;font:12px var(--mono);color:var(--teal)}.guide-steps li.current{background:#e4ecda;border-color:#a8bda0}.walk-controls{border-top:1px dashed var(--line);padding-top:2px}.walk-controls label{font-size:14px}.walk-buttons{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0}.walk-buttons button{font-size:12px;padding:7px 9px}.walk-buttons button:disabled{opacity:.45;cursor:default}.walk-buttons label{font-size:12px;margin:0 0 0 auto}.walk-buttons select{width:68px;font-size:12px;padding:5px}.layer-flow{display:flex;align-items:center;justify-content:space-between;gap:4px;margin:19px 0}.layer-flow span{font:12px var(--mono);background:#eff0e8;border:1px solid var(--line);border-radius:7px;padding:8px 9px}.layer-flow span.visited{background:#dce8d4;border-color:#a7bf9e}.layer-flow span.current{box-shadow:0 0 0 2px #b26a2f;border-color:var(--white)}.layer-flow i{font-style:normal;color:#88977e}.walk-readout{padding:16px;background:#edf1e4;border-left:3px solid var(--teal);border-radius:0 8px 8px 0;min-height:130px}.walk-readout>b{font-size:14px}.walk-readout p{font-size:13px;line-height:1.7;margin:10px 0 0}.walk-note{font-size:12px;line-height:1.7;color:var(--muted)}.signal-calculation{display:flex;align-items:center;gap:8px;margin-top:14px}.signal-calculation span{flex:1;min-width:0;font-size:11px;line-height:1.5;color:var(--muted)}.signal-calculation strong,.comparison-readout strong,.unit-values strong{font:14px var(--mono);display:block;margin-top:8px;color:var(--ink);overflow-wrap:anywhere}.signal-calculation i{font-style:normal;color:var(--teal)}.comparison-readout{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid #cbd7c1;margin-top:14px;padding-top:12px;font-size:12px}.comparison-readout span:last-child strong{color:var(--orange)}.unit-values{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:14px;font:11px var(--mono)}.unit-values strong{font-size:11px}.sr-table-caption{font-size:14px;margin:10px 0}.layer-cursor{pointer-events:none}
+@media(max-width:640px){.signal-calculation{gap:5px}.signal-calculation strong{font-size:12px}.layer-flow span{font-size:11px;padding:7px}.walk-buttons label{margin-left:0}.guide-steps li{font-size:13px}.scene-legend{font-size:14px}}
+@media print{.walk-controls,.walk-buttons,.walk-note{display:none}.visual-guide{break-inside:avoid}.guide-steps li{font-size:10pt}.walk-readout{min-height:0}}
+@media(min-width:1500px){main{padding-inline:70px}.scene{height:340px}}
+@media(max-width:1180px){.layout{grid-template-columns:210px minmax(0,1fr)}.sidebar{padding:32px 18px}.sidebar nav a{font-size:13px}main{padding:34px 32px 0}.intro>p{position:static;max-width:none;margin:14px 0 20px}.intro>p br{display:none}.intro h1 br{display:none}.intro h1{font-size:58px}.experiment{grid-template-columns:minmax(0,1.5fr) minmax(225px,1fr)}.visual-pane{padding:20px}.controls{padding:22px 18px}.scene{height:280px}.pane-heading{flex-wrap:wrap}.scene-tools span{width:100%}.quiz{gap:20px}.orientation{gap:12px}.orientation span{font-size:12px}}
+@media(max-width:900px){.layout{display:block}.sidebar{height:auto;position:sticky;top:75px;z-index:20;border-right:0;border-bottom:1px solid var(--line);background:var(--paper);padding:0 22px}.sidebar>.eyebrow,.sidebar-note,.source-link{display:none}.sidebar nav{flex-direction:row;margin:0;gap:8px;overflow-x:auto;padding:8px 0}.sidebar nav a{flex:none;margin:0;font-size:12px;padding:7px 9px}.sidebar nav a span{font-size:11px}.topbar{height:75px;padding:0 24px;gap:16px}.progress{width:220px}.brand{font-size:10px}.brand-sub{font-size:11px}.logo{width:35px;height:35px}html{scroll-padding-top:150px}.lab{scroll-margin-top:150px}main{max-width:850px;margin:auto;padding-top:30px}.intro h1{font-size:60px}.intro>p{max-width:600px}.orientation{margin-bottom:40px}.experiment{grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr)}}
+@media(max-width:640px){.topbar{padding:0 16px;gap:12px}.brand>span:not(.logo){display:none}.progress{width:auto;flex:1}.progress>div{font-size:10px}.text-btn{max-width:60px;font-size:10px;line-height:1.4;padding:4px}.sidebar{padding:0 16px}.sidebar nav a{font-size:11px}.sidebar nav a span{display:none}main{padding:28px 18px 0}.intro h1{font-size:47px;line-height:1.12;letter-spacing:-.06em}.intro .eyebrow{font-size:10px}.intro h1 br{display:block}.intro>p{font-size:15px}.intro-meta{gap:10px;font-size:10px}.intro-meta span+span:before{margin-right:10px}.orientation{grid-template-columns:1fr;padding:16px 0;gap:12px}.orientation>div{display:flex;align-items:baseline;gap:14px}.orientation b{font-size:10px;width:104px;flex:none;margin:0}.orientation span{font-size:12px}.section-heading{gap:12px}.section-number{width:33px;height:33px;font-size:12px}.section-heading .eyebrow{font-size:10px}h2{font-size:31px}.completion{font-size:10px;padding:4px 7px;position:absolute;right:0;top:-26px}.section-heading{position:relative}.minute{padding:20px}.minute p{font-size:15px}.equation{font-size:20px}.equation span{font-size:11px}.experiment{grid-template-columns:1fr}.visual-pane{border-right:0;border-bottom:1px solid var(--line);padding:18px}.controls{padding:22px}.controls h3{margin-bottom:18px}.scene{height:275px}.scene-tools span{width:auto;font-size:10px}.quiz{grid-template-columns:1fr;gap:25px}.question h3{font-size:16px}.answer{font-size:14px}summary{font-size:13px;padding:16px}summary span{display:block;margin:3px 0 0 15px;font-size:12px}.fold-body{padding:0 18px 15px}.lab{margin-bottom:65px}.diagnostic-card{padding:23px}.diagnostic-card h3{font-size:28px}.case-metrics b{font-size:17px}.case-metrics span{font-size:8px}.case-metrics{gap:8px}.reference-table table{min-width:650px}.footer-bottom{flex-wrap:wrap;gap:12px}.chart-legend{font-size:10px}.metrics b{font-size:21px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+@media print{body{background:white;font-size:11pt}.topbar,.sidebar,.scene-tools,.controls,.orientation,.skip,dialog,.footer-bottom button{display:none!important}.layout{display:block}main{padding:0;max-width:none}.intro h1{font-size:36pt}.intro>p{position:static}.lab{break-before:page;margin-bottom:0}.experiment{display:block}.visual-pane{border:0}.scene{height:220px}.quiz{grid-template-columns:1fr 1fr}details>.fold-body{display:block!important}details{break-inside:avoid}.minute,.question{break-inside:avoid}.answer{font-size:10pt;padding:5pt}.feedback{font-size:10pt}footer{break-before:page}.diagnostic-card{color:black;background:#eee}.diagnostic-card p,.diagnostic-card .eyebrow,.case-metrics b,.case-metrics span{color:black}}
+/* Theory precedes each visualization. */
+.theory-primer,.theory-section{padding:28px;margin:0 0 24px;border:1px solid var(--line);border-radius:var(--radius);background:var(--white)}.theory-primer{margin-bottom:52px}.theory-primer h2{font-size:29px}.theory-primer>p{font-size:16px;line-height:1.8}.notation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:17px 0}.notation-grid b{font-size:15px;color:var(--teal)}.notation-grid p{font-size:14px;line-height:1.75;margin:7px 0}.theory-primer .theory-assumption{border-top:1px solid var(--line);padding-top:15px;font-size:13px;color:var(--muted)}.theory-section>h3{font:600 25px/1.35 var(--display);margin:10px 0 23px}.theory-reasoning{padding-left:24px;margin:0 0 23px}.theory-reasoning li{padding-left:8px;margin-bottom:18px}.theory-reasoning li::marker{color:var(--teal);font-family:var(--mono)}.theory-reasoning strong{font-size:16px}.theory-reasoning p{font-size:16px;line-height:1.8;margin:6px 0 0;max-width:850px}.theory-example{padding:17px 20px;background:#edf2e6;border-left:3px solid var(--teal);border-radius:0 8px 8px 0}.theory-example>b,.observation-task>b{font:12px var(--mono);letter-spacing:.06em;color:var(--teal)}.theory-example p,.observation-task p{margin:8px 0 0;line-height:1.8;font-size:15px}.prediction{background:#faf1df;border-color:#dfcfb1;margin-top:18px}.prediction summary{font-weight:600;font-size:15px;line-height:1.7}.prediction p{margin:0;padding:0 20px 18px;font-size:15px;line-height:1.8}.observation-task{padding:20px 0 0}.observation-task>b{color:var(--orange)}
+@media(max-width:800px){.notation-grid{grid-template-columns:1fr;gap:12px}.notation-grid>div+div{border-top:1px solid var(--line);padding-top:12px}}
+@media(max-width:640px){.theory-section,.theory-primer{padding:20px}.theory-section>h3{font-size:23px}.theory-primer h2{font-size:26px}.theory-reasoning{padding-left:20px}.theory-reasoning li{padding-left:3px}.theory-example{padding:15px}}
+@media print{.theory-section,.theory-primer{background:white;border-radius:0;padding:12pt}.theory-section{break-inside:auto}.theory-reasoning li,.theory-example,.observation-task{break-inside:avoid}.theory-reasoning p{font-size:11pt}.prediction>p{display:block!important}}
+.minute .formula-explanation{font:15px/1.8 var(--sans);margin:16px 0 0;padding:16px 18px;background:#fffefa99;border:1px solid #ccd6c6;border-radius:8px;color:var(--ink)}.formula-explanation>b{display:block;color:var(--teal);margin-bottom:5px}
+.lab>h3{font:600 22px/1.35 var(--display);margin:36px 0 10px}.lab>h3 .n{color:var(--muted);font:500 15px var(--mono);margin-right:10px}.prose p{max-width:820px}.intro>p{position:static;max-width:38em;margin:4px 0 18px}.title-dot{display:none}.pane-heading h3{margin:8px 0 12px}.controls h3{margin:8px 0 18px}canvas.scene.grid-scene,canvas.scene.grid-scene.tall{display:block;width:100%;max-width:100%;min-height:0;height:unset}@media(max-width:1100px){.experiment.lab-shell{grid-template-columns:1fr}.experiment.lab-shell .visual-pane{border-right:0;border-bottom:1px solid var(--line)}}.prose ul,.prose ol{max-width:820px}.box{border-radius:var(--radius);padding:18px 22px 8px;margin:22px 0 26px;border:1px solid var(--line);background:var(--white)}.box .tag{display:block;font:12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin:0 0 8px}.key{background:#edf2e6;border-color:#ccdcca}.hand{background:#faf1df;border-color:#dfcfb1}.hand .tag{color:var(--orange)}.warn{background:#f8ebe4;border-color:#e8c8ad}.warn .tag{color:var(--orange)}.note{background:#fbfaf5}.t{color:var(--teal);font-weight:650}.r{color:var(--orange);font-weight:650}.qin{width:74px;font:16px var(--mono);padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;background:#fff;text-align:center;margin:0 3px;color:var(--ink)}.qin:focus{outline:none;border-color:var(--teal)}.qin.ok{border-color:var(--teal);background:var(--mint)}.qin.no{border-color:var(--orange);background:#f8ebe4}.qin.wide{width:118px}.chkrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 14px}.chkbtn{appearance:none;font:600 13px var(--sans);color:#fff;background:var(--deep);border:1px solid var(--deep);border-radius:999px;padding:6px 16px;cursor:pointer}.chkmsg{font-size:14px;color:var(--muted)}.chkmsg.good{color:var(--teal);font-weight:650}details.ans{margin:0;display:inline-block}details.ans summary{list-style:none;cursor:pointer;display:inline-block;font:600 13px var(--sans);color:var(--muted);background:var(--white);border:1px solid var(--line);border-radius:999px;padding:5px 14px}details.ans summary::-webkit-details-marker{display:none}details.ans[open]{display:block}details.ans .a{margin-top:12px;padding:12px 16px;background:var(--white);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;font-size:15px}table.wt.small{font-size:16px}table.wt.small th,table.wt.small td{padding:7px 12px}.fig{margin:18px 0 22px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px}.fig canvas,.fig svg{display:block;width:100%;height:auto}.fig .cap{font-size:13px;color:var(--muted);font-style:italic;margin:10px 0 0}.lab-shell{margin:22px 0 8px}.scene.grid-scene,.scene.grid-scene.tall{display:block;width:100%;height:auto!important;min-height:0;max-width:100%;cursor:default}.num-grid{margin-top:14px;overflow:auto}.num-grid table{border-collapse:collapse;font:12px var(--mono)}.num-grid td{min-width:34px;height:28px;text-align:center;border:1px solid #c9d4c4;background:#f7f8f1}.num-grid td.win{outline:2px solid var(--orange);outline-offset:-2px}.num-grid td.pad{background:#ece7dc;color:#8a8478}.arch-col{display:flex;flex-direction:column;gap:6px}.arch-col i{font-style:normal;display:block;border:1px solid var(--line);background:#e7eee1;border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.45}.arch-col i b{display:block;font:11px var(--mono);color:var(--teal)}.compare-arch{display:grid;grid-template-columns:1fr 1fr;gap:16px}.quiz{grid-template-columns:1fr}.mcq-list{padding-left:22px}.mcq-list li{margin:0 0 10px}.layout{grid-template-columns:220px minmax(0,1fr)}nav a{font-size:13px;padding:9px 8px}@media(max-width:900px){.compare-arch{grid-template-columns:1fr}}
+canvas.scene.grid-scene,canvas.scene.grid-scene.tall{display:block;width:100%;max-width:100%;min-height:0;height:unset}
+
+/* Consistent teaching sequence and worksheet-wide example switch. */
+.topbar{gap:20px}
+.sidebar{overflow-y:auto}
+.sidebar-note{padding-top:18px}
+.visual-mode{display:flex;align-items:center;gap:3px;padding:4px;border-radius:999px;background:#e7eae0;white-space:nowrap;font-size:12px;flex-shrink:0}
+.visual-mode>span{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:999px;color:#596b62}
+.visual-mode [data-mode-label=numbers],.visual-mode[aria-pressed=true] [data-mode-label=images]{background:var(--deep);color:#fff}
+.visual-mode[aria-pressed=true] [data-mode-label=numbers]{background:transparent;color:#596b62}
+.mode-guide{padding:18px 22px;border:1px solid #c5d7c4;border-left:3px solid var(--teal);border-radius:0 12px 12px 0;margin:-25px 0 52px;background:#eef2e7}
+.mode-guide p{font-size:13px;line-height:1.7;margin:7px 0}
+.mode-guide #mode-status{font-size:14px;color:var(--deep);font-weight:700}
+.mode-guide .mode-footnote{color:var(--muted);font-size:12px}
+.step-label{display:block;font:500 11px/1.5 var(--mono);letter-spacing:.1em;color:var(--teal);margin-bottom:12px}
+.lesson-hook p{font:500 clamp(21px,2.2vw,28px)/1.45 var(--display);letter-spacing:-.025em;margin:0 0 22px;max-width:32em}
+.problem-visual{margin:0 0 24px;padding:20px 22px;background:#eeeee5;border:1px solid #d7dbce;border-radius:14px}
+.problem-panels{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.problem-panel{max-width:100%;overflow-x:auto;flex:1 1 220px}
+.problem-visual figcaption{font-size:13px;line-height:1.65;color:#51635a;margin-top:16px;max-width:65em}
+.pixel-table{border-collapse:collapse;font:500 13px/1.4 var(--mono);width:auto!important;max-width:none}
+.pixel-table caption{text-align:left;font:600 12px/1.4 var(--sans);color:var(--ink);padding:0 0 10px;max-width:280px;caption-side:top}
+.pixel-table td{height:27px;min-width:27px;padding:3px 4px;text-align:center;border:1px solid #8a9d8750;font-variant-numeric:tabular-nums}
+.pixel-table td.in-window{box-shadow:inset 0 0 0 2px #cf572f}
+.lesson-explanation{margin:24px 0}
+.lesson-explanation p{font-size:16px;line-height:1.85;margin:0;max-width:52em}
+.formula-card{background:#e7edde;border:1px solid #ccdcca;border-radius:14px;padding:22px 26px;margin:24px 0 12px;overflow-x:auto}
+.formula-card .equation{font-size:22px}
+.formula-card .step-label{color:#536d56}
+.theory-fold{margin:0 0 30px!important;border:1px solid #cfd6c8;border-radius:12px;background:#fffefa}
+.theory-fold>summary{list-style:none;display:flex;align-items:center;gap:13px;padding:15px 19px;cursor:pointer;color:var(--ink)}
+.theory-fold>summary::-webkit-details-marker{display:none}
+.theory-fold>summary::before,.theory-fold>summary::after{content:none}
+.theory-fold>summary .fold-icon{display:grid;place-items:center;width:28px;height:28px;flex:none;margin:0;border:1px solid #cfdbca;border-radius:50%;font-size:18px;color:var(--teal)}
+.theory-fold>summary>span{margin:0}
+.theory-fold>summary b{font-size:14px;font-weight:600;display:block}
+.theory-fold>summary small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.theory-fold[open] .fold-icon{transform:rotate(45deg)}
+.theory-fold[open]>summary{border-bottom:1px solid var(--line)}
+.theory-fold .fold-body{padding:22px 26px 12px}
+.theory-fold .formula-explanation{font-size:15px;line-height:1.85;border-left:3px solid #b9cbb0;padding:0 0 0 16px;margin:0 0 26px}
+.theory-fold .theory-reasoning p{font-size:15px}
+.theory-fold .box{margin:18px 0}
+.architecture-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.architecture-choices b{font-size:14px;color:var(--teal)}
+.architecture-choices p{font-size:14px;line-height:1.7}
+.interactive-step{margin-top:26px}
+.interactive-step .lab-shell{margin-top:0}
+.experiment.lab-shell{grid-template-columns:minmax(0,1fr) 250px}
+.visual-pane{padding:22px;min-width:0}
+.canvas-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;border:1px solid #d4dacb;border-radius:8px;background:#f3f4ed}
+.canvas-scroll canvas.scene.grid-scene,.canvas-scroll canvas.scene.grid-scene.tall{display:block;max-width:none;min-height:0;height:auto!important}
+.scene-tools{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.scene-tools span{font-size:11px;width:100%}
+.scene-tools button{font-size:12px}
+.matrix-values{margin:12px 0;border:1px solid #d8ddd2;border-radius:8px;background:#f9faf4}
+.matrix-values>summary{font-size:12px;padding:10px 13px;color:var(--teal);cursor:pointer}
+.matrix-tables{padding:10px 15px 16px;display:flex;gap:24px;flex-wrap:wrap;overflow:auto}
+.matrix-tables .pixel-table td{min-width:42px;height:32px;font-size:13px}
+.walk-readout{min-height:0;padding:15px 17px;margin-top:15px}
+.walk-readout p{line-height:1.85}
+.calculation{display:block;font-family:var(--mono);font-size:12px;margin-top:9px;overflow-wrap:anywhere}
+.parameter-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:15px}
+.parameter-counts>span{font-size:12px;line-height:1.5}
+.parameter-counts strong{display:block;font:600 18px/1.5 var(--mono);color:var(--deep);margin:4px 0}
+.questions-step{margin-top:30px}
+.questions-step .box:first-of-type{margin-top:12px}
+.question-context{font-size:13px;color:var(--muted)}
+.qin{min-height:36px}
+.asset-credit{font-size:12px!important;line-height:1.7!important}
+@media(max-width:1250px){.experiment.lab-shell{grid-template-columns:1fr}.experiment .visual-pane{border-right:0;border-bottom:1px solid var(--line)}.experiment .controls{display:block;padding:20px 24px}.experiment .controls input[type=range],.experiment .controls select{max-width:380px}.topbar{gap:12px;padding-inline:24px}.brand-sub{display:none}.progress{width:215px}.architecture-choices{grid-template-columns:1fr}}
+@media(max-width:900px){.brand>span:not(.logo){display:none}.topbar{gap:12px}.progress{flex:1;max-width:240px}.sidebar nav{gap:3px}.problem-panels{gap:20px}.sidebar-note{display:none}}
+@media(max-width:640px){
+ .topbar{height:112px;flex-wrap:wrap;align-content:center;gap:8px 10px;padding:10px 16px}
+ .brand{order:0}.visual-mode{order:1;margin-left:auto}.text-btn{order:2;max-width:52px}
+ .progress{order:3;flex:0 0 100%;max-width:none;margin-left:0}.progress>div{font-size:10px}.progress progress{margin-top:4px;height:4px}
+ .sidebar{top:112px}html{scroll-padding-top:180px}.lab{scroll-margin-top:180px}
+ .visual-mode>span{font-size:11px;padding:6px 9px}.mode-guide{margin-top:-18px;padding:14px 16px}
+ .problem-visual{padding:16px}.problem-panel{flex-basis:100%}.problem-panels{gap:22px}
+ .formula-card{padding:18px}.formula-card .equation{font-size:20px}
+ .theory-fold .fold-body{padding:18px}.theory-fold>summary{padding:13px}
+ .visual-pane{padding:14px}.parameter-counts{grid-template-columns:1fr}.parameter-counts strong{display:inline;font-size:16px;margin-left:8px}
+ .lesson-explanation p{font-size:15px}.lab{margin-bottom:62px}.questions-step .box{padding:17px 16px 8px}
+}
+@media print{
+ .mode-guide,.visual-mode,.matrix-values{display:none!important}.lesson-hook p{font-size:18pt}
+ .theory-fold:not([open]){display:none}.theory-fold[open] .fold-body{display:block!important}
+ .problem-visual,.formula-card{break-inside:avoid}.canvas-scroll{overflow:visible;border:0}
+ .canvas-scroll canvas.scene.grid-scene{max-width:100%;height:auto!important}
+ .experiment.lab-shell{display:block}.interactive-step,.questions-step{break-inside:auto}
+ .pixel-table td{font-size:10pt}.lab{break-before:page}
+}
+.historical-context{padding-bottom:16px;margin-bottom:17px!important;border-bottom:1px solid var(--line)}
+.lesson-explanation .architecture-choices{margin-top:22px;padding:20px;background:#f0f0e6;border-radius:12px}
+.lesson-explanation .architecture-choices p{font-size:13px;margin-top:8px;line-height:1.75}
+.formula-card .notation-note{font:12px/1.7 var(--sans);color:var(--muted);margin:13px 0 0}
+.image-preview{width:76px;height:76px;display:block;border-radius:5px;overflow:hidden;margin:0 0 13px;border:1px solid #bec8b7}
+.fixed-example-grid{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0;overflow-x:auto}
+.fixed-example-grid .pixel-table td{min-width:42px;height:42px;font-size:15px}
+.diagnostic-answer{background:#fffefa;color:var(--ink);border-radius:8px;margin-top:16px}
+.diagnostic-answer p{padding:0 18px 15px;color:var(--ink)!important;font-size:14px}
+html{scroll-padding-top:0}
+@media print{.image-preview{width:60px;height:60px}}
+.matrix-scroll-hint{font-size:12px;color:var(--teal);margin:8px 0}
+@media print{.matrix-scroll-hint{display:none}}
+.canvas-scroll canvas.scene{touch-action:auto}
+
+/* Keep the input → operation → output visible as one continuous experiment. */
+.experiment.lab-shell{grid-template-columns:minmax(0,1fr)}
+.experiment .visual-pane{border-right:0;border-bottom:1px solid var(--line)}
+.experiment .controls{padding:20px 24px}
+.experiment .controls select,.experiment .controls input[type=range]{max-width:420px}
+.animation-stages{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-size:12px;color:var(--muted)}
+.animation-stages span{padding:7px 10px;border:1px solid transparent;border-radius:7px;transition:background .18s,color .18s}
+.animation-stages span.current{background:#e1ead9;border-color:#b9cdb4;color:var(--deep)}
+.animation-stages i{font-style:normal;color:#8a9b88}
+.animation-timeline{display:grid;grid-template-columns:auto minmax(80px,1fr) auto 72px auto;align-items:center;gap:12px;margin-top:16px}
+.animation-timeline label{font-size:12px;white-space:nowrap;margin:0}
+.animation-timeline output{float:none;display:inline;font-size:11px;margin-left:6px}
+.animation-timeline input[type=range]{margin:0}
+.animation-timeline select,.animation-timeline button{font-size:12px;padding:6px 8px}
+.animation-status{font-size:12px;color:var(--teal);margin:10px 0;min-height:2em}
+.canvas-scroll canvas.scene{cursor:default}
+.formula-card.formula-fold{padding:0;overflow:hidden}
+.formula-fold>summary{display:flex;justify-content:space-between;align-items:center;gap:16px;list-style:none;padding:17px 22px}
+.formula-fold>summary::-webkit-details-marker{display:none}
+.formula-fold>summary span{margin:0;color:var(--deep);font-size:13px}
+.formula-fold>summary .step-label{font-size:11px;color:#536d56}
+.formula-fold>summary>span:last-child{display:flex;align-items:center;gap:14px}
+.formula-fold>summary>span:last-child>span{display:inline-block;font-size:19px;transition:transform .2s}
+.formula-fold[open]>summary>span:last-child>span{transform:rotate(45deg)}
+.formula-fold[open]>summary{border-bottom:1px solid #ccdcca}
+.formula-content{padding:20px 24px;overflow-x:auto}
+.calculation-fold{margin-top:14px;background:transparent;border-color:#d4dece}
+.calculation-fold>summary{font-size:12px;color:var(--teal);padding:10px 13px}
+.calculation-fold>div{font-size:13px;padding:0 14px 14px;line-height:1.8}
+.image-preview{width:144px;height:144px;flex:none;border:8px solid #111;border-radius:8px;margin:0;box-shadow:0 3px 12px #182e2b12}
+.problem-panel.with-image{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;flex-basis:390px}
+@media(max-width:640px){
+ .animation-stages{gap:4px;font-size:10px}.animation-stages span{padding:6px 4px}.animation-stages i{display:none}
+ .animation-timeline{grid-template-columns:auto minmax(60px,1fr) auto;gap:9px}
+ .animation-timeline label:first-child{grid-column:1}.animation-timeline input{grid-column:2 / 4}
+ .animation-timeline select{width:72px}.animation-timeline button{justify-self:end}
+ .formula-fold>summary{padding:15px;gap:10px}.formula-fold>summary span{font-size:12px}
+ .formula-content{padding:18px}.image-preview{width:144px;height:144px}
+ .problem-panel.with-image{flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce){.animation-stages span,.formula-fold>summary>span:last-child>span{transition:none}}
+@media print{.animation-stages,.animation-timeline,.animation-status{display:none}.image-preview{width:90px;height:90px}}
+
+/* Parameters and the result form one compact experiment. */
+.experiment .visual-pane{border:0;padding:22px}
+.experiment .controls{display:flex;flex-wrap:wrap;align-items:end;gap:12px 20px;padding:14px 16px;margin:0 0 16px;border:1px solid #d4dfcd;border-radius:10px;background:#eef3e8}
+.control-field{flex:1 1 170px;min-width:0;max-width:420px}
+.experiment .controls label{margin:0 0 6px;font-size:12px}
+.experiment .controls input[type=range]{width:100%;margin:0;height:36px}
+.experiment .controls select{width:100%;max-width:none;font-size:13px;padding-block:8px}
+.experiment .controls output{font-size:12px}
+.experiment-guide,.layer-details{margin:12px 0 0;background:#fafbf6;border-color:#dce2d5}
+.experiment-guide>summary,.layer-details>summary{padding:10px 13px;font-size:12px;color:var(--teal)}
+.experiment-guide>div{padding:0 15px 13px;font-size:13px;line-height:1.7}
+.experiment-guide .try{margin:0;padding:0;border:0}.experiment-guide .try>b{display:none}
+.layer-details .num-grid{margin:0;padding:0 14px 14px}
+.visual-pane>.scene-tools{justify-content:flex-start;margin:0 0 12px;gap:8px}
+.visual-pane>.scene-tools span{display:none}
+.visual-pane>.scene-tools button{padding:6px 10px;background:#fffefa}
+.walk-readout{margin-top:12px;padding:12px 15px}.walk-readout p{font-size:13px;line-height:1.7;margin:7px 0 0}
+.animation-stages{margin-bottom:10px}
+.map-comparison{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.map-comparison button{display:flex;align-items:center;text-align:left;gap:10px;padding:10px;border:2px solid #dce3d5;background:#fafbf5}
+.map-comparison button[aria-pressed=true]{border-color:var(--teal);background:#e7f0df;box-shadow:0 0 0 1px #12655b12}
+.map-comparison b{display:block;font-size:12px;line-height:1.5}
+.map-comparison small{display:block;font-size:10px;line-height:1.5;color:var(--muted);margin-top:4px}
+.map-thumbnail{flex:none}.map-thumbnail .image-preview{width:62px;height:62px;border:0;border-radius:3px;box-shadow:none}
+.pipeline-stages{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.pipeline-stages button{font-size:12px;padding:7px 10px}
+.pipeline-stages button[aria-pressed=true]{color:#fff;background:var(--deep);border-color:var(--deep)}
+.panel-jumps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.panel-jumps[hidden]{display:none}
+.panel-jumps button{padding:5px 9px;font-size:11px;color:var(--teal);background:#f2f6eb}
+.panel-jumps button:hover{border-color:var(--teal)}
+.field-growth{margin:15px 0;font-size:12px;max-width:640px}
+.field-growth>b{display:block;font-size:12px;margin-bottom:10px}
+.field-growth>div{display:grid;grid-template-columns:66px minmax(20px,1fr) 92px;align-items:center;gap:12px;margin:7px 0}
+.field-growth i{display:block;min-width:2px;height:10px;background:var(--teal);border-radius:0 4px 4px 0}
+.field-growth strong{font:12px var(--mono);text-align:right;white-space:nowrap}
+.field-comparison{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(240px,1fr);gap:20px;align-items:start}
+.field-comparison .field-growth{padding:14px;border:1px solid #d4dfcd;border-radius:8px;background:#f4f7ef;margin:0}
+.field-comparison .field-growth>div{grid-template-columns:54px minmax(10px,1fr) 84px;gap:8px;margin:14px 0}
+@media(max-width:1100px){.field-comparison{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){
+ .experiment .visual-pane{padding:14px}.experiment .controls{padding:12px;gap:12px;margin-bottom:14px}
+ .control-field{flex-basis:125px}.experiment .controls label{font-size:11px}
+ .map-comparison{gap:6px}.map-comparison button{flex-direction:column;align-items:flex-start;padding:7px;gap:7px}
+ .map-thumbnail .image-preview{width:54px;height:54px}.map-comparison b{font-size:10px}.map-comparison small{display:none}
+ .pipeline-stages{gap:5px}.pipeline-stages button{font-size:10px;padding:6px 7px}
+ .animation-stages span{padding:5px 3px}
+}
+@media print{.experiment .controls,.experiment-guide,.scene-tools,.pipeline-stages{display:none}}
+
+.scan-location{font:12px/1.7 var(--mono);color:var(--deep);padding:9px 12px;margin:0 0 10px;border-left:3px solid var(--teal);background:#eef3e8}
+:root{--pale:#e9f1e8}
+html{scroll-behavior:auto;scroll-padding-top:110px}
+.lecture-label{margin-left:auto;font:11px var(--mono);color:var(--muted);letter-spacing:.06em}
+.topbar .text-btn{white-space:nowrap}.intro>p{position:static;max-width:42em}.intro{padding-bottom:30px}
+.lesson-explanation p+p{margin-top:14px}
+.architecture-experiment{display:block;padding:24px;margin-top:18px}
+.architecture-experiment .controls{display:flex;gap:20px;flex-wrap:wrap;padding:18px;background:#f3f4eb;border-radius:10px;margin:18px 0}
+.architecture-experiment .controls label{flex:1 1 160px;margin:0}
+.architecture-experiment output{float:none;font:13px var(--mono)}
+.architecture-experiment .task{font-size:15px;line-height:1.8}
+.caption,.notation-note{font-size:13px;line-height:1.7;color:var(--muted)}
+.readout{font-size:14px;line-height:1.85;padding:16px 18px;background:#edf2e6;border:1px solid #ccdcca;border-radius:10px;margin:20px 0;font-variant-numeric:tabular-nums}
+.readout strong{color:var(--deep);font-size:20px}.readout .error{color:var(--orange)}
+.question label{margin:0 0 12px;font-size:16px;line-height:1.8;font-weight:400}.question label>b{color:var(--orange);font:12px var(--mono);margin-right:6px}
+textarea{display:block;width:100%;resize:vertical;font:15px/1.7 var(--sans);color:var(--ink);border:1px solid #cfcebc;border-radius:8px;background:var(--white);padding:12px;margin:12px 0}
+textarea:focus-visible{outline:3px solid #b27715;outline-offset:3px}
+.answer-fold{border:0;background:transparent;margin:10px 0 16px;border-radius:0}.answer-fold summary{display:inline-block;font:600 13px var(--sans);border:1px solid var(--line);border-radius:999px;background:var(--white);color:var(--muted);padding:6px 14px}.answer-fold p{background:var(--white);border-left:3px solid var(--orange);padding:12px 16px;font-size:15px;line-height:1.8;margin:12px 0}
+.reference-diagram{overflow:auto}.reference-diagram figure{margin:16px 0}.reference-diagram img{display:block;width:100%;min-width:660px}.reference-diagram figcaption{font-size:12px;line-height:1.7;margin:10px 0}.reference-diagram figcaption a{display:inline-block;margin-left:8px}
+.problem-visual .pixel-table td{min-width:38px;height:38px;font-size:16px}.problem-visual .pixel-table caption{font-size:13px;line-height:1.5}.problem-visual .shape-problem strong{display:block;font:22px/1.6 var(--mono);margin:14px 0;color:var(--deep)}.problem-visual .shape-problem b,.problem-visual .scale-problem b{font-size:14px}.problem-visual p{font-size:14px;line-height:1.8}.problem-visual .architecture-choices{gap:22px}.problem-visual .architecture-choices p{margin-bottom:0}
+.table-wrap{overflow:auto}.table-wrap table{min-width:560px}.mobile-hint{display:none}
+.comparison{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:25px 0}.comparison>div{border-left:3px solid var(--teal);padding-left:18px}.comparison b{font-size:14px}.comparison p{margin:8px 0}.comparison strong{font:30px Georgia,serif}.matrices{display:flex;align-items:flex-start;flex-wrap:wrap;gap:22px;margin:20px 0}.matrix-group{max-width:100%;text-align:center}.matrix-group>p{font-size:14px;margin:8px 0;font-weight:600}.matrix{display:grid;grid-template-columns:repeat(var(--n),44px);gap:3px}.cell{height:44px;display:grid;place-items:center;background:#f0f1e9;border:1px solid var(--line);font:500 18px ui-monospace,monospace;font-variant-numeric:tabular-nums;color:var(--ink)}.cell.selected{background:var(--gold);border-color:#a87836}.flow{display:flex;flex-wrap:wrap;gap:12px}.flow span{padding:10px 14px;background:var(--pale);font-size:15px}.plot svg{display:block;width:100%;overflow:visible}.plot text{font:12px system-ui;fill:var(--ink)}.bar-row{margin:18px 0}.bar-label{font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px}.track{height:17px;background:#ecefe8;margin-top:6px}.bar{height:100%;background:var(--teal)}.bar.secondary{background:var(--orange)}/* Guided concept storyboards retain readable HTML labels at every width. */
+.walkthrough{margin:32px 0;padding:26px;background:#fffefa;border:1px solid var(--line);border-radius:10px}.walkthrough h3{margin:8px 0 22px}.story-toolbar{display:flex;flex-wrap:wrap;gap:9px}.story-toolbar button{font-size:14px;min-height:44px}.story-toolbar button[aria-pressed=true]{background:var(--teal);color:#fffefa}.story-toolbar button:disabled{opacity:.45;cursor:default}.story-counter{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.story-scene{padding:20px 0;min-width:0}.story-scene svg{width:100%;display:block}.story-scene svg text{font:12px system-ui;fill:var(--ink)}.story-route{display:grid;gap:12px}.story-node{border:1px solid var(--line);padding:15px;border-radius:6px;background:var(--paper);min-width:0;transition:background-color .4s,border-color .4s}.story-node span{display:block;font-size:13px;color:var(--muted)}.story-node strong{display:block;font-size:20px;font-weight:600;overflow-wrap:anywhere}.story-node.is-active{background:var(--pale);border-color:var(--teal);box-shadow:inset 4px 0 var(--teal)}.story-lanes,.story-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.route-arrow{text-align:center;font-size:14px;color:var(--teal);margin:8px 0}.story-narration{border-top:1px solid var(--line);padding-top:18px;min-height:140px}.story-narration h4{margin:0 0 10px}.story-narration p{margin:0}.story-metrics{display:flex;flex-wrap:wrap;gap:14px;font-size:14px}.story-metrics b{font-size:20px;display:block}.channel-stack{display:flex;min-height:44px;opacity:.25;transition:opacity .5s}.channel-stack.complete{opacity:1}.channel-stack span{display:grid;place-items:center;min-width:32px;background:#c8ddd0;color:var(--ink);font-size:16px}.channel-stack span:nth-child(2){background:#e7d7b5}.channel-stack span:nth-child(3){background:#b9d4de}.channel-stack span:nth-child(4){background:#d7cce0}.story-matrix-row{display:flex;flex-wrap:wrap;justify-content:center;gap:22px}.story-grid-group b{display:block;text-align:center;font-size:14px;margin-bottom:10px}.story-grid{display:grid;grid-template-columns:repeat(var(--columns),40px);gap:4px}.story-grid span{display:grid;place-items:center;height:40px;background:var(--paper);border:1px solid var(--line);font:18px ui-monospace,monospace}.story-grid span.is-active{background:var(--gold);border-color:#a87836}.story-grid-group{margin:5px 0}@media(max-width:600px){.walkthrough{padding:18px}.story-lanes,.story-branches{grid-template-columns:1fr}.story-node strong{font-size:18px}.story-matrix-row{gap:14px}.story-narration{min-height:0}}@media(prefers-reduced-motion:reduce){.story-node,.channel-stack{transition:none}}@media print{.story-toolbar{display:none}.walkthrough{break-inside:avoid}.story-narration{min-height:0}.channel-stack{opacity:1}}
+
+/* Match the reference's lab surfaces and compact playback tools. */
+.walkthrough{border-radius:var(--radius);padding:24px;margin:0;background:var(--white)}
+.walkthrough h3{font:600 21px/1.3 var(--display);letter-spacing:-.035em}
+.walkthrough .eyebrow{font-size:10px}.story-toolbar button{font:500 12px var(--sans)}
+.story-narration h4,.architecture-experiment h4{font:600 18px/1.4 var(--display);letter-spacing:-.025em}.story-narration p{font-size:15px;line-height:1.85}
+.story-grid span.is-active,.cell.selected{background:#f4e5cd;border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange)}
+.story-grid span,.cell{font-family:var(--mono)}.comparison strong{font:600 25px var(--mono)}
+@media(max-width:900px){.sidebar nav a{font-size:12px}.lecture-label{font-size:10px}}
+@media(max-width:640px){.topbar{height:74px;flex-wrap:nowrap}.topbar .brand{order:0}.lecture-label{order:1;font-size:9px}.topbar .text-btn{order:2;max-width:none}.sidebar{top:74px}.lab{scroll-margin-top:145px}html{scroll-padding-top:145px}.architecture-experiment,.walkthrough{padding:16px}.architecture-experiment .controls{padding:14px;gap:18px}.question label{font-size:15px}.reference-diagram img{min-width:660px}.story-grid{grid-template-columns:repeat(var(--columns),38px)}.story-grid span{height:38px;font-size:17px}.matrix{grid-template-columns:repeat(var(--n),36px)}.cell{height:36px;font-size:17px}}
+@media print{.topbar,.sidebar,.story-toolbar,.architecture-experiment .controls{display:none!important}.layout{display:block}main{padding:0}.lab{break-before:page}.reference-diagram img{min-width:0}.walkthrough,.architecture-experiment,.problem-visual{break-inside:avoid}.answer-fold:not([open]),.formula-fold:not([open]){display:none}.answer-fold[open] p{display:block}.table-wrap table{min-width:0}textarea{min-height:60px}}
+/* Use a single anchor offset; keep matrix captions readable without stretching cells. */
+html{scroll-padding-top:0}.lab{scroll-margin-top:110px}
+.problem-panel .pixel-table caption{min-width:190px;text-align:left}
+@media(max-width:640px){.lab{scroll-margin-top:145px}}
+html{scroll-behavior:auto}.intro{padding-top:6px}.intro>.eyebrow{margin-top:28px}.intro>p{max-width:650px}.intro h1{max-width:800px}.mission{display:grid;grid-template-columns:1fr 1fr 1.5fr;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--white)}.mission>div{padding:25px;border-right:1px solid var(--line)}.mission>div:last-child{border:0;background:#e5ecde}.mission-stat strong{font:500 clamp(30px,3.4vw,48px) var(--display);letter-spacing:-.04em;color:var(--teal);display:block}.mission-stat span{font-size:13px;line-height:1.6;display:block;margin-top:10px}.mission-question p{font:500 22px/1.45 var(--display);letter-spacing:-.03em;margin:12px 0}.mission-route,.decision-strip{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:28px 0}.mission-route span,.decision-strip span{padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--white);font-size:13px;flex:1 1 130px}.pipeline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.pipeline>.node{flex:1 1 160px}.node{padding:22px 18px;border:1px solid #cbd6c8;border-radius:12px;background:var(--white);min-width:0}.node small{display:block;font:10px/1.6 var(--mono);letter-spacing:.07em;color:var(--muted)}.node strong{font:600 22px/1.5 var(--display);display:block;margin:10px 0;overflow-wrap:anywhere}.node span{display:block;font-size:13px;line-height:1.6}.node.reusable{background:#deeadc;border-color:#afc6b1}.node.mismatch{background:#f6e8d7;border-color:#d9b694}.feature-puzzle,.augmentation-hook{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.augmentation-hook{grid-template-columns:1fr 1fr}.arrow-pair,.leaf-pair{font-size:44px;line-height:1.7;color:var(--teal)}.lab-demo{padding:26px;border:1px solid var(--line);border-radius:18px;background:var(--white)}.lab-demo .controls{display:flex;flex-wrap:wrap;gap:20px;border-radius:10px;margin:22px 0;padding:18px}.lab-demo .controls label{flex:1 1 180px;margin:0}.lab-demo output{float:right}.lab-demo .controls .switch-row{font-weight:400;align-items:center;flex:1 1 180px}.lab-demo .task{font-size:15px;line-height:1.8}.matrix-row{display:flex;align-items:flex-start;gap:26px;flex-wrap:wrap;margin:24px 0}.number-matrix{border-collapse:separate;border-spacing:3px;width:auto;margin:0;max-width:100%;font:500 18px var(--mono)}.number-matrix caption{font:600 14px/1.5 var(--sans);padding-bottom:10px;text-align:left}.number-matrix td{width:44px;min-width:44px;height:44px;text-align:center;border:1px solid #d0d8cd;border-radius:3px;padding:2px;color:#183c35;font-variant-numeric:tabular-nums}.matrix-block{max-width:100%;overflow:auto}.matrix-block small{display:block;margin-top:10px;color:var(--muted);font-size:12px}.prob-row{display:grid;grid-template-columns:90px 1fr 70px;gap:12px;align-items:center;margin:14px 0;font-size:14px}.prob-track{background:#ecede5;height:22px;border-radius:5px;overflow:hidden}.prob-fill{height:100%;background:var(--teal);transition:width .2s}.prob-row:nth-child(2) .prob-fill{background:#ad673c}.freeze-route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.freeze-block{border:1px solid var(--line);border-radius:10px;padding:18px;background:#edf1e9}.freeze-block.trainable{border-color:#cf9a6c;background:#fbefdd}.freeze-block small{display:block;font-size:11px;color:var(--muted)}.freeze-block b{display:block;font-size:14px;margin:10px 0}.freeze-block strong{display:block;font:24px var(--mono);margin:14px 0}.freeze-block .state{font:11px var(--mono);color:var(--teal)}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.toolbar button{min-height:42px}.question{padding:20px 24px;margin:16px 0;border:1px solid var(--line);border-radius:12px;background:#f0f1e7}.question textarea{background:var(--white)}.question label{font-weight:400}.question label b{color:var(--orange);font:13px var(--mono);margin-right:8px}.question .answer-fold{margin-bottom:0}.context-hook{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px}.symbol{width:65px;height:65px;display:grid;place-items:center;border:2px solid var(--teal);border-radius:10px;font:30px var(--mono);background:#d8e9da}.local-window{border:2px dashed #bb5135;padding:18px;text-align:center;border-radius:10px;font:21px/1.7 var(--mono)}.local-window small{font:10px var(--mono)}.context-lab{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:start}.rf-table{border-spacing:2px;font-size:16px}.rf-table td{width:34px;min-width:34px;height:34px;border-radius:2px}.rf-table td.covered{background:#d7e7d6!important;border-color:#80a68b}.rf-table td.marked{box-shadow:inset 0 0 0 2px #bb5135;font-weight:700}.rf-table td.center{background:#12655b!important;color:white}.patch-network{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center}.patch-network span{padding:9px;border:1px solid var(--line);border-radius:5px;background:#edf2e6;font-size:12px}.patch-network b,.patch-network strong{grid-column:1/-1;font-size:14px;color:var(--teal)}.context-lab .readout{margin-top:0}.readout.warning{background:#faebda;border-color:#dcba95}.story{border-top:1px solid var(--line);margin-top:26px;padding-top:20px}.story-top{display:flex;flex-wrap:wrap;align-items:center;gap:9px}.story-top .eyebrow{margin-right:auto}.story-top button{font-size:12px;min-height:38px}.story-narrative{padding:18px;background:#eff3e9;border-radius:10px;margin-top:14px;min-height:100px}.story-narrative b{display:block;margin-bottom:6px;font-size:15px}.story-narrative p{font-size:14px;line-height:1.8;margin:0}.story-progress{display:flex;gap:6px;margin-top:12px}.story-progress span{height:4px;background:#d9dfd2;flex:1;border-radius:2px}.story-progress .current{background:var(--teal)}.asset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.asset-grid>a{padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--white);text-decoration:none;font-weight:600}.asset-grid>a>span{font:12px var(--mono);color:var(--orange);margin-right:12px}.asset-grid small{display:block;margin-top:10px;font-size:12px;font-weight:400;color:var(--muted)}footer{padding:25px 0 50px;border-top:1px solid var(--line);font-size:12px;line-height:2;color:var(--muted)}.noscript{position:fixed;bottom:0;padding:14px;background:white;border:1px solid var(--line)}
+@media(max-width:1100px){.mission{grid-template-columns:1fr 1fr}.mission-question{grid-column:1/-1}.context-lab{grid-template-columns:1fr}.feature-puzzle{grid-template-columns:1fr}.freeze-route{grid-template-columns:1fr}.freeze-block{display:grid;grid-template-columns:1fr 1fr;align-items:center}.freeze-block strong{grid-column:2;grid-row:1/3}.freeze-block .state{grid-column:1/-1}}
+@media(max-width:640px){.intro h1{font-size:48px}.mission>div{padding:18px}.mission-stat strong{font-size:33px}.lab-demo{padding:16px}.pipeline{gap:10px}.pipeline>.node{flex-basis:100%}.pipeline>b{transform:rotate(90deg);margin:auto}.augmentation-hook{grid-template-columns:1fr}.question{padding:16px}.asset-grid{grid-template-columns:1fr}.number-matrix td{min-width:40px;width:40px;height:40px}.rf-table td{min-width:30px;width:30px;height:30px;font-size:14px}.matrix-row{gap:20px}.lab-demo .controls{padding:14px}.context-hook{padding:0;gap:8px}.symbol{width:44px;height:44px;font-size:24px}.local-window{padding:10px;font-size:18px}.story-narrative{min-height:0}.topbar{gap:8px}.lecture-label{font-size:9px}.intro-meta{gap:10px}.intro-meta span+span:before{margin-right:10px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media print{.lab-demo .controls,.toolbar,.story-top button,#export-answers{display:none!important}.lab-demo{padding:14px}.lab{break-before:page}.lab-demo,.mission,.question{break-inside:avoid}.question textarea{min-height:75px}.formula-card{break-inside:avoid}.story-narrative{min-height:0}.asset-grid{display:none}.intro{break-after:avoid}.rf-table td{min-width:30px;width:30px;height:30px}.number-matrix td{print-color-adjust:exact;-webkit-print-color-adjust:exact}.answer-fold:not([open]){display:none!important}}
+.final-review,.synthesis{padding:24px 28px 18px}.final-review .mcq-list li{padding:8px 0;line-height:1.75}.final-review .qin{vertical-align:middle}.synthesis ol{padding-left:24px}.synthesis li{margin:18px 0}.synthesis label{display:block;font-weight:600;margin-bottom:8px}.synthesis textarea{width:100%;min-height:84px;resize:vertical;background:var(--white)}
+@media(max-width:640px){.final-review,.synthesis{padding:18px}.final-review .qin{display:block;margin:8px 0 0}}
+
+.animation-lab{border:1px solid #c4d3c2;border-radius:18px;background:#fffefa;overflow:hidden;margin:0 0 22px;color:#173d36}
+.anim-heading{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;padding:25px 25px 18px}.anim-heading .eyebrow{font-size:10px}.anim-heading h3{font-size:25px;margin:10px 0 8px;line-height:1.25;max-width:650px}.anim-heading p{font-size:14px;line-height:1.7;margin:0;color:#5b7166}.anim-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 24px;border-block:1px solid #d7dfd0;background:#eef2e8}.anim-toolbar button{min-height:42px;background:#fffefa;font-size:13px;padding:9px 14px;border-radius:7px}.anim-toolbar .anim-play{background:#17685d;color:#fffefa;border-color:#17685d;min-width:100px;font-weight:600}.anim-toolbar button:disabled{opacity:.4;cursor:default}.anim-toolbar label{margin:0 0 0 auto;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400}.anim-toolbar select{width:75px;padding:7px;font-size:13px;min-height:38px}.anim-counter{font:12px var(--mono);color:#5b7166;margin-left:9px;white-space:nowrap}.anim-viewport{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;border-bottom:1px solid #d7dfd0;background:#f7f6ee}.anim-canvas{min-width:830px}.teaching-svg{width:100%;height:auto;display:block}.teaching-svg text{font-family:var(--sans,system-ui,sans-serif)}.anim-viewport:focus-visible{outline:3px solid #b27715;outline-offset:-3px}.anim-pan-hint{display:none;margin:8px 18px;font-size:11px;color:#5b7166}.anim-timeline{display:flex;align-items:center;gap:24px;padding:14px 25px 3px}.anim-timeline label{margin:0;flex:1;font:11px var(--mono);color:#5b7166}.anim-timeline input{margin-top:8px;display:block;accent-color:#17685d}.anim-download{font-size:11px;white-space:nowrap;padding:9px;background:transparent}.anim-beats{display:flex;gap:6px;overflow:auto;scrollbar-width:thin;padding:14px 25px 18px}.anim-beats button{flex:0 0 128px;text-align:left;font-size:11px;line-height:1.5;padding:10px 12px;min-height:76px;background:#f7f6ee;color:#5b7166;border:1px solid #d2dccc;position:relative}.anim-beats span{display:block;font:11px var(--mono);margin-bottom:5px;color:#17685d}.anim-beats button.current{color:#173d36;border-color:#17685d;background:#e5eee0;box-shadow:inset 0 -3px #17685d}.anim-beats i{display:block;font-style:normal;color:#a64729;font-size:10px;margin-top:5px}.anim-caption{border-top:1px solid #d7dfd0;margin:0;padding:21px 25px;background:#f2f5eb;min-height:200px}.anim-caption-top{display:flex;flex-direction:column;gap:7px}.anim-caption h4{font:600 21px/1.4 var(--display,system-ui);letter-spacing:-.02em;margin:0}.anim-phase{font:10px var(--mono);letter-spacing:.07em;color:#17685d}.anim-narration{font-size:15px;line-height:1.8;margin:9px 0 13px;max-width:65em}.anim-equation{padding:13px 16px;background:#fffefa;border-radius:8px;border:1px solid #d4dece;font:14px/1.8 var(--mono,monospace);color:#173d36;overflow-wrap:anywhere}.anim-caption.is-checkpoint{background:#f8edda;border-top-color:#dabb86}.is-checkpoint .anim-phase{color:#a64729}.anim-prompt{font-size:12px;font-weight:600;line-height:1.7;color:#894121;margin:12px 0 0}.anim-assumptions,.anim-reduced{font-size:11px!important;line-height:1.7!important;color:#5b7166;padding:14px 25px;margin:0}.anim-reduced{background:#f4ead9;color:#704823}.anim-reduced[hidden],.anim-prompt[hidden]{display:none}.explore-fold{margin:0 0 20px;border:1px solid #d0d9ca;border-radius:12px;background:#fffefa}.explore-fold>summary{padding:17px 21px;font-size:14px;font-weight:600;cursor:pointer;color:#17685d}.explore-fold .lab-demo{border:0;border-top:1px solid #d7dfd0;border-radius:0 0 12px 12px}
+@media(max-width:1200px){.anim-pan-hint{display:block}.anim-heading{flex-direction:column;gap:3px}.anim-heading h3{font-size:23px}.anim-caption{min-height:0}}
+@media(max-width:640px){.anim-heading{padding:20px 17px 15px}.anim-toolbar{padding:13px 14px;gap:7px}.anim-toolbar button{font-size:12px;padding:8px 12px}.anim-toolbar .anim-play{min-width:90px}.anim-toolbar label{margin-left:0}.anim-counter{margin-left:auto}.anim-timeline{padding:16px 17px 0;gap:12px}.anim-caption{padding:18px 17px}.anim-caption h4{font-size:20px}.anim-narration{font-size:14px}.anim-equation{font-size:12px;padding:12px}.anim-beats{padding:13px 17px}.anim-beats button{flex-basis:115px}.anim-assumptions,.anim-reduced{padding:13px 17px}.anim-download{font-size:10px}}
+@media print{.anim-toolbar,.anim-timeline,.anim-beats,.anim-pan-hint{display:none!important}.anim-canvas{min-width:0!important}.animation-lab{break-inside:avoid}.anim-viewport{overflow:visible}.anim-caption{min-height:0}.anim-heading{padding:12px}.anim-caption{padding:12px}.anim-assumptions{font-size:9pt!important}.anim-caption h4{font-size:13pt}.anim-narration{font-size:10pt}.anim-equation{font-size:9pt}}
+
+
+    /* In-Depth Lecture Notes Section Styles */
+    .lecture-notes-section {
+        max-width: 1140px;
+        margin: 60px auto 100px;
+        padding: 40px;
+        background: #ffffff;
+        border: 1px solid var(--line, #e2e8f0);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        color: var(--ink, #183c35);
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.75;
+    }
+    .notes-header {
+        border-bottom: 2px solid var(--teal, #12655b);
+        padding-bottom: 20px;
+        margin-bottom: 35px;
+    }
+    .notes-header h2 {
+        font-size: 36px;
+        margin: 0 0 10px;
+        color: var(--teal, #12655b);
+        font-family: Georgia, serif;
+    }
+    .notes-header p {
+        font-size: 16px;
+        color: var(--muted, #64736f);
+        margin: 0;
+    }
+    .notes-card {
+        background: #fbfdfb;
+        border: 1px solid var(--line, #e2e8f0);
+        border-left: 4px solid var(--teal, #12655b);
+        border-radius: 12px;
+        padding: 24px;
+        margin: 25px 0;
+    }
+    .notes-card h3 {
+        margin-top: 0;
+        font-size: 22px;
+        color: var(--ink, #183c35);
+        font-family: Georgia, serif;
+    }
+    .notes-formula {
+        background: #f4f6f4;
+        border: 1px solid #dbe3dc;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 16px 0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 15px;
+        overflow-x: auto;
+    }
+    .notes-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        font-size: 15px;
+    }
+    .notes-table th, .notes-table td {
+        padding: 12px 16px;
+        border: 1px solid var(--line, #e2e8f0);
+        text-align: left;
+    }
+    .notes-table th {
+        background: #f5f8f6;
+        font-weight: 700;
+        color: var(--teal, #12655b);
+    }
+    .nav-toggle-bar {
+        display: flex;
+        gap: 12px;
+        margin-left: auto;
+    }
+    .nav-toggle-btn {
+        background: var(--teal, #12655b);
+        color: #ffffff !important;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .nav-toggle-btn:hover {
+        background: #0d4b44;
+    }
+    
+</style>
+</head><body><a class="skip" href="#main">Skip to worksheet</a><header class="topbar">
+    <div class="nav-toggle-bar">
+        <a href="#main" class="nav-toggle-btn">Interactive Lab ↗</a>
+        <a href="#complete-lecture-notes" class="nav-toggle-btn">Complete Lecture Notes & Formulas ↓</a>
+    </div>
+    <a class="brand" href="#"><span class="logo">λ</span><span>DEEP LEARNING<span class="brand-sub">Presentation &amp; practice sheets</span></span></a><span class="lecture-label">TRANSFER LEARNING</span><button id="print" class="text-btn">Print lecture sheet</button></header><div class="layout"><aside class="sidebar"><div class="eyebrow">LECTURE / 5 VISUAL LABS</div><nav aria-label="Worksheet sections"><a href="#opening"><span>00</span>Why borrow knowledge?<i></i></a><a href="#pretrained"><span>01</span>Pretrained models<i></i></a><a href="#features"><span>02</span>Feature extraction<i></i></a><a href="#freezing"><span>03</span>Layer freezing<i></i></a><a href="#augmentation"><span>04</span>Data augmentation<i></i></a><a href="#context"><span>05</span>Beyond local vision<i></i></a><a href="#exit"><span>06</span>Make the decisions<i></i></a><a href="#check"><span>07</span>Check yourself<i></i></a></nav><div class="sidebar-note"><span class="tiny-cross">+</span><p>Borrow knowledge.<br>Choose what changes.</p><small id="saved-status" role="status">Answers stay in this browser.</small></div></aside><main id="main"><div class="intro"><a class="source-link" href="#">← All worksheets</a><div class="eyebrow">LECTURE PRESENTATION / TRANSFER LEARNING</div><h1>Borrow. Adapt.<br><em>See further.</em></h1><p>A powerful network already exists. Your dataset is small. Learn what to reuse, what to update, and when to rethink how a model sees.</p><div class="intro-meta"><span>75–90 minutes</span><span>5 guided visual lessons</span><span>Predict → explore → explain</span></div></div><div class="orientation"><div><b>01 / NOTICE</b><span>A puzzle before a definition.</span></div><div><b>02 / EXPLORE</b><span>Change one thing. Trace the numbers.</span></div><div><b>03 / EXPLAIN</b><span>Make a prediction, then reveal the reasoning.</span></div></div>
+<section id="opening" class="lab"><div class="section-heading"><span class="section-number">00</span><div><span class="eyebrow">TODAY'S MISSION</span><h2>120 images.<br>Millions of decisions.</h2></div></div><div class="lesson-hook"><p>Your team needs to sort three kinds of leaves. You have 40 labelled images per class and a pretrained ResNet-18. Is starting from scratch the best use of what you know?</p></div><div class="mission"><div class="mission-stat"><strong>120</strong><span>labelled images<br>before the split</span></div><div class="mission-stat"><strong>11.18M</strong><span>parameters in ResNet-18<br>with a new 3-class head</span></div><div class="mission-question"><span class="eyebrow">THE TENSION</span><p>How much must we relearn<br>to recognise something new?</p></div></div><p class="caption">A motivating scenario, not a training benchmark. Parameter count includes BatchNorm's learned scale and bias; it excludes running-statistic buffers.</p><div class="mission-route"><span>Borrow a visual vocabulary</span><b>→</b><span>Train a new reader</span><b>→</b><span>Decide what can change</span><b>→</b><span>Show useful variation</span></div><div class="minute"><span class="eyebrow">KEEP ONE QUESTION OPEN</span><p>Even after all four decisions, can a model miss a relationship between distant parts of an image? We will return to that puzzle at the end.</p></div><p>By the end, you will choose a transfer strategy, calculate a classifier's size, trace which weights change, reject an unsafe augmentation, and explain why patch attention is worth exploring.</p><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>Starting point, notation & a fair experiment</small></span></summary><div class="fold-body"><p>Bring your knowledge of convolution, pooling, gradient descent, and train/validation/test splits. We write a network as a backbone f<sub>θ</sub> followed by a task head g<sub>φ</sub>. θ and φ are learned parameters.</p><p>Split the 120 original images first, preferably by plant or capture session if images are related. For illustration: 84 train, 18 validation, 18 test, stratified if feasible. Use validation to select a recipe and touch the test set only for the final evaluation. A tiny split has high uncertainty; repeated or cross-validation can help.</p><p>The labs below use exact small numerical examples, hand-designed features, or architecture counts. No accuracy curves or learned embeddings are claimed.</p></div></details></section><section id="pretrained" class="lab"><div class="section-heading"><span class="section-number">01</span><div><span class="eyebrow">PRETRAINED</span><h2>A head start, not a finished job.</h2></div></div>
+ <div class="lesson-hook" data-step="hook"><span class="step-label">01 / THE QUESTION</span><p>A network recognises 1,000 ImageNet classes. Your three leaf classes are not on its menu. Is everything it learned now useless?</p></div>
+ <figure class="problem-visual" data-step="problem"><span class="step-label">02 / SEE THE PROBLEM</span><div class="pipeline"><div class="node"><small>NEW INPUT</small><strong>Leaf image</strong><span>224 × 224 × 3</span></div><b>→</b><div class="node reusable"><small>ALREADY LEARNED</small><strong>Visual features</strong><span>edges · textures · parts</span></div><b>→</b><div class="node mismatch"><small>WRONG TASK</small><strong>1,000 scores</strong><span>Where are our three labels?</span></div></div><figcaption>The output labels do not fit the task. That does not make the internal representation worthless.</figcaption></figure>
+ <div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / THE IDEA</span><p>A <b>pretrained model</b> has already learned parameters on another dataset or objective. Transfer learning reuses that experience for a new task. The <b>backbone</b> extracts a representation; the <b>head</b> turns it into task-specific predictions.</p><p>Think of hiring an experienced photographer: they already notice edges, textures, and shapes, but must learn your catalogue. Keep the useful visual vocabulary and replace the old label dictionary. Similarity between the old and new tasks matters; reuse is a hypothesis to validate.</p></div>
+ <div class="formula-card" data-step="formula"><span class="step-label">04 / THE FORMULA</span><div class="equation">ŷ = g<sub>φ</sub>(f<sub>θ*</sub>(x)) &nbsp; &nbsp; φ = (W, b), &nbsp; W ∈ ℝ<sup>C×d</sup>, b ∈ ℝ<sup>C</sup></div><p class="notation-note">x is the input; θ* is the pretrained backbone; d is the feature width; C is the new class count. A linear head has Cd weights and C biases. The parameter notation denotes a weight matrix and bias vector.</p></div><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>What transfers, what changes & preprocessing</small></span></summary><div class="fold-body"><p>Early CNN layers often detect simpler patterns and later ones are more task-specific, but this is a useful tendency, not a guarantee. Source bias and domain shift can make a pretrained representation unhelpful (negative transfer).</p><p>ImageNet ResNet-18 produces 512 features after global average pooling. Its original head has 512 × 1,000 + 1,000 = 513,000 parameters. A 3-class replacement has 512 × 3 + 3 = 1,539. Pretraining changes the initialization; whether the backbone later changes is a separate decision.</p><p>Use the checkpoint's expected channel order, input range, resizing, and normalization. The weights alone are not the complete input contract. Training augmentation may vary the crop, but normalization must remain compatible.</p><p><b>Decision:</b> compare a frozen-backbone baseline against selective fine-tuning on validation data. Do not promise a fixed accuracy gain or claim that more pretraining always wins.</p></div></details>
+ <div class="interactive-step" data-step="interactive"><span class="step-label">05 / WATCH, PREDICT, THEN EXPLORE</span><div class="animation-lab" data-animation="pretrained"></div><details class="explore-fold"><summary>Explore the values yourself · open the interactive calculator</summary><div class="lab-demo"><div class="pane-heading"><h3>Replace the dictionary.</h3><span class="live-label">LIVE COUNTS</span></div><p class="task">Change the number of classes. Which part of the network grows?</p><div class="controls"><label for="classes">New classes <output id="classes-value">3</output><input id="classes" type="range" min="2" max="12" value="3"></label></div><div id="pretrained-flow" class="pipeline"></div><div id="pretrained-count" class="readout" aria-live="polite"></div></div></details></div>
+ <div class="questions-step" data-step="questions"><span class="step-label">06 / CHECK YOUR UNDERSTANDING</span><article class="question"><label for="q-1.1"><b>1.1</b> A 512-feature backbone needs a 3-class linear head with bias. How many head parameters must be learned?</label><textarea id="q-1.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>512 × 3 + 3 = 1,539. The old 1,000-class head is replaced; the pretrained backbone can still be reused.</p></details></article><article class="question"><label for="q-1.2"><b>1.2</b> A natural-image checkpoint performs poorly on a new domain. What would you check before discarding transfer learning?</label><textarea id="q-1.2" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>Verify the expected preprocessing, labels and splits, then compare frozen features and selective fine-tuning on validation data. A domain mismatch may require different pretraining or more adaptation; transfer is not guaranteed.</p></details></article></div></section><section id="features" class="lab"><div class="section-heading"><span class="section-number">02</span><div><span class="eyebrow">FEATURES</span><h2>Keep the eyes. Teach a new reader.</h2></div></div>
+ <div class="lesson-hook" data-step="hook"><span class="step-label">01 / THE QUESTION</span><p>Could you learn to sort leaves without changing a single convolutional weight?</p></div>
+ <figure class="problem-visual" data-step="problem"><span class="step-label">02 / SEE THE PROBLEM</span><div class="feature-puzzle"><div class="matrix-block"><table class="number-matrix"><caption>View 1 · toy leaf pixels</caption><tbody><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 96%)">0</td></tr><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 69%)">9</td><td style="background:hsl(100 24% 75%)">7</td></tr><tr><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 69%)">9</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 96%)">0</td></tr><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td></tr></tbody></table></div><div class="matrix-block"><table class="number-matrix"><caption>View 2 · shifted pixels</caption><tbody><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td></tr><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 69%)">9</td></tr><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 69%)">9</td><td style="background:hsl(100 24% 75%)">7</td></tr><tr><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 96%)">0</td><td style="background:hsl(100 24% 75%)">7</td><td style="background:hsl(100 24% 96%)">0</td></tr></tbody></table></div><div class="node reusable"><small>THE MISSING STEP</small><strong>Comparable features</strong><span>Many pixel coordinates change. Which evidence still helps recognise the species?</span></div></div><figcaption>A classifier needs useful coordinates. A reusable representation can supply them.</figcaption></figure>
+ <div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / THE IDEA</span><p>In <b>fixed feature extraction</b>, each image passes through a frozen backbone. Train only a new head on the resulting feature vectors. The head learns how to combine the evidence that is already available.</p><p>Think of a trained observer handing a new curator a description card. The curator learns a new sorting rule without retraining the observer. If the description omits the crucial clue, a better sorting rule alone may not be enough.</p></div>
+ <div class="formula-card" data-step="formula"><span class="step-label">04 / THE FORMULA</span><div class="equation">z<sub>c</sub> = (1/HW) Σ<sub>i,j</sub>A<sub>ijc</sub> &nbsp; ; &nbsp; p = softmax(Wz + b)</div><p class="notation-note">A is a feature tensor with H × W positions and channels c. Global average pooling creates one value per channel. W and b belong to the new classifier; p is its class-probability vector.</p></div><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>An exact example, loss & caching</small></span></summary><div class="fold-body"><p>For channel 1, [[1,3],[2,2]] averages to 2. Channel 2, [[0,2],[4,2]], also averages to 2. Thus z = [2,2]. Let W = [[1,−0.5],[−0.5,1]] and b = [1,1]. The scores are [2,2] and softmax gives [0.5,0.5].</p><p>For a labelled example y, cross-entropy is L = −log p<sub>y</sub>. Optimize W and b while keeping θ fixed. With z = [3,1], the scores become [3.5,0.5], so p<sub>A</sub> ≈ 0.953. This confidence comes from a hand-selected toy classifier; it is not calibrated evidence about real leaves.</p><p>Feature maps are generally learned channel responses, not guaranteed human-interpretable properties. The channels here are deliberately simple.</p><p>Cached features can save repeated backbone computation when the backbone and preprocessing are fixed. Caching one view per image removes fresh online augmentation; cached augmented views or recomputation are needed for varied views.</p></div></details>
+ <div class="interactive-step" data-step="interactive"><span class="step-label">05 / WATCH, PREDICT, THEN EXPLORE</span><div class="animation-lab" data-animation="features"></div><details class="explore-fold"><summary>Explore the values yourself · open the interactive calculator</summary><div class="lab-demo"><div class="pane-heading"><h3>From feature maps to a decision.</h3><span class="live-label">EXACT TOY MODEL</span></div><p class="task">Predict the pooled values before changing the example. Watch how the same head reads new evidence.</p><div class="controls"><label for="feature-example">Feature-map example<select id="feature-example"><option value="balanced">Balanced evidence</option><option value="a">More evidence for class A</option><option value="b">More evidence for class B</option></select></label></div><div id="feature-maps" class="matrix-row"></div><div id="feature-readout" class="readout" aria-live="polite"></div><div id="feature-bars"></div><p class="caption">Toy, hand-designed feature maps and fixed demonstration head; this lab traces inference, not head training.</p></div></details></div>
+ <div class="questions-step" data-step="questions"><span class="step-label">06 / CHECK YOUR UNDERSTANDING</span><article class="question"><label for="q-2.1"><b>2.1</b> Pool [[1,3],[2,2]] and [[0,2],[4,2]]. With W = [[1,−0.5],[−0.5,1]] and b = [1,1], what are the logits?</label><textarea id="q-2.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>The means are [2,2]. The first score is 1×2 − 0.5×2 + 1 = 2; the second is −0.5×2 + 1×2 + 1 = 2. Softmax yields [0.5,0.5].</p></details></article><article class="question"><label for="q-2.2"><b>2.2</b> Two classes always produce identical frozen feature vectors. Can a deterministic head separate them perfectly?</label><textarea id="q-2.2" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>No. Identical representations give the same deterministic output. The missing distinction must enter through better input information or a changed representation, for example fine-tuning suitable backbone layers.</p></details></article></div></section><section id="freezing" class="lab"><div class="section-heading"><span class="section-number">03</span><div><span class="eyebrow">FREEZING</span><h2>Freeze the weights. Keep the signal.</h2></div></div>
+ <div class="lesson-hook" data-step="hook"><span class="step-label">01 / THE QUESTION</span><p>“Freeze the backbone” sounds like switching it off. If it stops working, how can the head learn anything?</p></div>
+ <figure class="problem-visual" data-step="problem"><span class="step-label">02 / SEE THE PROBLEM</span><div class="pipeline"><div class="node"><small>INPUT</small><strong>x</strong></div><b>→</b><div class="node reusable"><small>FROZEN ≠ REMOVED</small><strong>f<sub>θ</sub>(x)</strong><span>Forward computation still runs</span></div><b>→</b><div class="node mismatch"><small>TRAINABLE</small><strong>New head</strong><span>Loss determines the update</span></div></div><figcaption>Freezing controls which parameters are updated. It does not remove layers from the forward path.</figcaption></figure>
+ <div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / THE IDEA</span><p><b>Layer freezing</b> holds selected parameters fixed. <b>Fine-tuning</b> updates some or all pretrained parameters for the new task, often with a smaller learning rate than the new head.</p><p>Imagine editing a textbook: lock the trusted chapters and revise the chapter that needs new examples. You still read the locked chapters. Start with a head-only baseline, then consider unfreezing later blocks if validation evidence supports it.</p></div>
+ <div class="formula-card" data-step="formula"><span class="step-label">04 / THE FORMULA</span><div class="equation">θ<sub>ℓ</sub> ← θ<sub>ℓ</sub> − η<sub>ℓ</sub> m<sub>ℓ</sub> ∇<sub>θℓ</sub>L &nbsp; ; &nbsp; m<sub>ℓ</sub> ∈ {0,1}</div><p class="notation-note">ℓ is a layer, ηℓ its learning rate, and mℓ a teaching shorthand: 0 holds its parameters fixed, 1 applies a plain SGD update. Real freezing should exclude frozen parameters from optimizer updates, including weight decay.</p></div><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>Autograd, BatchNorm & a practical training recipe</small></span></summary><div class="fold-body"><p><b>Forward pass:</b> frozen layers still transform x. <b>Backward pass:</b> frozen parameters need no parameter gradients; gradients through their operations may still be needed if earlier trainable layers require them. Do not indiscriminately detach tensors in a partially trainable network.</p><p>In PyTorch, <code>requires_grad_(False)</code> controls parameter gradients; <code>eval()</code> controls module behaviour. They are different. BatchNorm running means and variances are buffers and can change in training mode even when affine weights are frozen. Dropout also behaves differently in train and eval modes.</p><p>For a fixed-feature baseline: freeze the backbone, put it in eval mode, train the head, and optimize only parameters that require gradients. If a parent <code>train()</code> call resets the backbone mode, restore its eval mode. When unfreezing, update the optimizer's parameter groups and choose the BatchNorm policy deliberately.</p><p>Counts below are for torchvision-style ResNet-18: stem + layer1 = 157,504; layer2–4 = 11,019,008; a new 3-class head = 1,539. The grouped blocks simplify the decision; they are not individual layers.</p></div></details>
+ <div class="interactive-step" data-step="interactive"><span class="step-label">05 / WATCH, PREDICT, THEN EXPLORE</span><div class="animation-lab" data-animation="freezing"></div><details class="explore-fold"><summary>Explore the values yourself · open the interactive calculator</summary><div class="lab-demo"><div class="pane-heading"><h3>Choose who gets to learn.</h3><span class="live-label">ONE SGD STEP</span></div><p class="task">Toggle a group, then take one step. Every group stays on the forward route; only unlocked weights move.</p><div class="controls"><label class="switch-row"><input id="train-early" type="checkbox">Train stem + layer1</label><label class="switch-row"><input id="train-late" type="checkbox">Train layer2–4</label><label class="switch-row"><input id="train-head" type="checkbox" checked>Train new 3-class head</label></div><div id="freeze-route" class="freeze-route"></div><div class="toolbar"><button id="sgd-step">Take one SGD step</button><button id="sgd-reset">Reset weights</button></div><div id="freeze-readout" class="readout" aria-live="polite"></div><p class="caption">Representative scalar per group; fixed illustrative gradients [0.4, −0.2, 0.6], learning rates [0.01, 0.01, 0.1]. No momentum, weight decay, or BatchNorm updates are simulated. These gradients are not recomputed from a loss.</p></div></details></div>
+ <div class="questions-step" data-step="questions"><span class="step-label">06 / CHECK YOUR UNDERSTANDING</span><article class="question"><label for="q-3.1"><b>3.1</b> A weight is 2, its gradient is 0.4, and η = 0.1. What is its value after a frozen step? After an unfrozen SGD step?</label><textarea id="q-3.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>Frozen: 2. Unfrozen: 2 − 0.1×0.4 = 1.96. A fixed weight still participates in the forward computation.</p></details></article><article class="question"><label for="q-3.2"><b>3.2</b> You disabled parameter gradients but BatchNorm running statistics changed. Is this a contradiction?</label><textarea id="q-3.2" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>No. Running statistics are buffers, not gradient-trained parameters. BatchNorm can update them in train mode. Choose train/eval modes intentionally; eval mode itself does not freeze parameter gradients.</p></details></article></div></section><section id="augmentation" class="lab"><div class="section-heading"><span class="section-number">04</span><div><span class="eyebrow">AUGMENTATION</span><h2>More views. The same meaning.</h2></div></div>
+ <div class="lesson-hook" data-step="hook"><span class="step-label">01 / THE QUESTION</span><p>A leaf is still a leaf in a different position. But is a left-turn arrow still “left” after a horizontal flip?</p></div>
+ <figure class="problem-visual" data-step="problem"><span class="step-label">02 / SEE THE PROBLEM</span><div class="augmentation-hook"><div class="node reusable"><small>SPECIES LABEL</small><div class="leaf-pair" aria-label="A leaf and its mirrored view">♧ &nbsp; ⇄ &nbsp; ♧</div><span>Often the same class</span></div><div class="node mismatch"><small>DIRECTION LABEL</small><div class="arrow-pair" aria-label="Left arrow changes to right arrow">← &nbsp; ⇄ &nbsp; →</div><span>The class can change</span></div></div><figcaption>The same transformation can be helpful for one task and wrong for another. Validate the semantics, not just the appearance.</figcaption></figure>
+ <div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / THE IDEA</span><p><b>Data augmentation</b> samples plausible variations of training images so the model sees more than one exact rendering. Crops, flips, and brightness changes encode assumptions about what should not change the answer.</p><p>Think of rehearsing a talk in different rooms: useful variation prepares you for a new setting, but rewriting the subject would be a different talk. Augmented views are correlated observations of the same source; they do not create new independent labelled examples.</p></div>
+ <div class="formula-card" data-step="formula"><span class="step-label">04 / THE FORMULA</span><div class="equation">min<sub>θ,φ</sub> (1/N) Σ<sub>i</sub> 𝔼<sub>T∼𝒜</sub>[L(g<sub>φ</sub>(f<sub>θ</sub>(T(x<sub>i</sub>))), y<sub>i</sub>)]</div><p class="notation-note">𝒜 is a distribution of allowed transformations T. This standard classification form assumes T preserves the label yi. Frozen parameters are excluded from the minimization. Detection and segmentation require corresponding target transformations.</p></div><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>Transform math, leakage & sensible evaluation</small></span></summary><div class="fold-body"><p>For width W, a horizontal flip is x′[r,c] = x[r,W−1−c]. In the toy grid, brightness adds δ and clips: x′ = min(9,max(0,x+δ)). A right shift inserts zeros on the left and discards the rightmost column. A clockwise rotation maps output [r,c] to input [H−1−c,r] for a square grid.</p><p>Split original examples before generating augmented views. Put related captures in the same split when necessary. Otherwise a transformed training image can leak into validation and make performance look better than it is.</p><p>Use random augmentation for training and a consistent evaluation preprocessing pipeline. Deliberate test-time augmentation is a separate technique, not the default validation recipe. A severe crop can remove the object; colour shifts can erase a disease cue. Stronger is not automatically better.</p><p>For leaf species, moderate position and illumination changes may preserve labels. For left/right arrow classes, a horizontal flip requires changing the label or excluding that transform. For colour-based diagnoses, brightness/colour changes need domain care.</p></div></details>
+ <div class="interactive-step" data-step="interactive"><span class="step-label">05 / WATCH, PREDICT, THEN EXPLORE</span><div class="animation-lab" data-animation="augmentation"></div><details class="explore-fold"><summary>Explore the values yourself · open the interactive calculator</summary><div class="lab-demo"><div class="pane-heading"><h3>Transform pixels. Audit the label.</h3><span class="live-label">NUMBERED PIXELS</span></div><p class="task">Apply a flip, then switch the task to arrow direction. The pixel operation is identical. Is the training pair still valid?</p><div class="controls"><label for="aug-task">Classification task<select id="aug-task"><option value="leaf">Leaf species (toy shape)</option><option value="arrow">Arrow direction: left / right</option></select></label><label for="aug-transform">Geometry<select id="aug-transform"><option value="none">Original geometry</option><option value="flip">Horizontal flip</option><option value="rotate">90° clockwise rotation</option><option value="shift">Shift right by one pixel</option></select></label><label for="brightness">Brightness offset <output id="brightness-value">0</output><input id="brightness" type="range" min="-3" max="3" value="0"></label></div><div id="augmentation-matrices" class="matrix-row"></div><div id="augmentation-readout" class="readout" aria-live="polite"></div><p class="caption">Synthetic 4 × 4 images, values 0–9. Numbers stay visible. Geometry is applied before brightness; clipping can destroy evidence.</p></div></details></div>
+ <div class="questions-step" data-step="questions"><span class="step-label">06 / CHECK YOUR UNDERSTANDING</span><article class="question"><label for="q-4.1"><b>4.1</b> An image row is [0,2,7,9]. Flip it horizontally, then add 2 and clip to [0,9]. What is the result?</label><textarea id="q-4.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>Flip: [9,7,2,0]. Add and clip: [9,9,4,2]. The transform changes the pixels; whether the label remains valid depends on the task.</p></details></article><article class="question"><label for="q-4.2"><b>4.2</b> You generate five augmented views of every image, then randomly split the views. What goes wrong?</label><textarea id="q-4.2" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>Views from one original can occur in both training and validation, causing leakage. Split original images or source groups first, and augment only the training portion. Five views are not five independent labelled images.</p></details></article></div></section><section id="context" class="lab"><div class="section-heading"><span class="section-number">05</span><div><span class="eyebrow">CONTEXT</span><h2>When the answer lives far away.</h2></div></div>
+ <div class="lesson-hook" data-step="hook"><span class="step-label">01 / THE QUESTION</span><p>Two marks sit at opposite sides of an image. The label depends on whether they match. How many local steps let one location see both?</p></div>
+ <figure class="problem-visual" data-step="problem"><span class="step-label">02 / SEE THE PROBLEM</span><div class="context-hook"><div class="symbol">A</div><div class="local-window"><small>A LOCAL VIEW</small><div>· &nbsp; · &nbsp; ·<br>· &nbsp; ? &nbsp; ·<br>· &nbsp; · &nbsp; ·</div></div><div class="symbol">A</div></div><figcaption>Local evidence can be insufficient for a relationship. A wider computational path is needed.</figcaption></figure>
+ <div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / THE IDEA</span><p>A standard convolution mixes nearby pixels using shared filters. Stacking layers grows the <b>theoretical receptive field</b>, so CNNs can learn global context. Pooling and fixed local filters impose useful biases, but may lose precise spatial detail or require multiple stages to connect distant evidence.</p><p>Think of neighbours passing a message down a street. A <b>Vision Transformer (ViT)</b> first represents image patches as tokens, adds position information, and uses attention to let tokens exchange content-dependent information across the image. It resembles a group discussion rather than only neighbour-to-neighbour messages.</p></div>
+ <div class="formula-card" data-step="formula"><span class="step-label">04 / THE FORMULA</span><div class="equation">r<sub>ℓ</sub> = r<sub>ℓ−1</sub> + (k<sub>ℓ</sub>−1)j<sub>ℓ−1</sub> &nbsp; ; &nbsp; j<sub>ℓ</sub> = j<sub>ℓ−1</sub>s<sub>ℓ</sub><br>N = (H/P)(W/P) &nbsp; ; &nbsp; Attention(Q,K,V) = softmax(QKᵀ/√d<sub>k</sub>)V</div><p class="notation-note">r is receptive-field width; j is input spacing between adjacent features; initialize r₀ = j₀ = 1. k is kernel size, s stride, dilation is 1. H,W are divisible by patch size P. Q,K,V are token projections; softmax is row-wise. Full attention compares all token pairs.</p></div><details class="theory-fold"><summary><span class="fold-icon" aria-hidden="true">＋</span><span><b>Go deeper</b><small>What CNNs can do, what ViTs change & the cost</small></span></summary><div class="fold-body"><p>For L stride-1 3 × 3 convolutions without dilation, r = 1 + 2L. Three layers give 7 × 7 theoretical coverage. This is a geometric upper bound; the effective influence of individual pixels need not be uniform. Deeper layers, dilation, pooling, global pooling, large kernels, and hybrid attention can all widen context.</p><p>A conventional convolution uses the same learned spatial weights at different locations; attention weights depend on the current token content. Standard ViT splits an image into patches, flattens and projects each patch to an embedding, adds positional embeddings, then uses Transformer blocks. The original classification architecture also has a class token.</p><p>For 224 × 224 images and 16 × 16 patches, N = 196 patch tokens. There are 196² = 38,416 patch-to-patch attention scores per head. Including the class token gives 197² = 38,809. These counts are not total FLOPs or whole-model memory. Doubling patch width to 32 gives 49 tokens and 2,401 patch pairs, but coarser spatial detail.</p><p>Full attention has quadratic token-pair cost and weaker built-in locality than a CNN. Large-scale pretraining and the training recipe matter; ViTs are not automatically better on small datasets. The motivation is a different way to connect information, not a claim that CNNs are incapable of global reasoning.</p></div></details>
+ <div class="interactive-step" data-step="interactive"><span class="step-label">05 / WATCH, PREDICT, THEN EXPLORE</span><div class="animation-lab" data-animation="context"></div><details class="explore-fold"><summary>Explore the values yourself · open the interactive calculator</summary><div class="lab-demo"><div class="pane-heading"><h3>Grow the field. Connect the patches.</h3><span class="live-label">GEOMETRY, NOT ACCURACY</span></div><p class="task">Start with one convolution. How many layers cover both marked corners of this 7 × 7 input? Then compare patch sizes for a separate 224 × 224 image.</p><div class="controls"><label for="depth">3 × 3, stride-1 layers <output id="depth-value">1</output><input id="depth" type="range" min="1" max="5" value="1"></label><label for="patch">Patch width for a 224 × 224 image<select id="patch"><option value="16">16 pixels</option><option value="32">32 pixels</option></select></label></div><div class="context-lab"><div id="rf-grid"></div><div><div id="context-readout" class="readout" aria-live="polite"></div><div class="patch-network" aria-label="Schematic tokens linked through one global attention layer"><span>Patch 1</span><span>Patch 2</span><b>↘ &nbsp; ↓ &nbsp; ↙</b><strong>All-to-all attention</strong><b>↗ &nbsp; ↑ &nbsp; ↖</b><span>Patch 3</span><span>Patch 4</span></div><p class="caption">Four symbolic tokens shown for clarity; the readout counts all patches. Global reach does not guarantee learning the right relation.</p></div></div></div></details></div>
+ <div class="questions-step" data-step="questions"><span class="step-label">06 / CHECK YOUR UNDERSTANDING</span><article class="question"><label for="q-5.1"><b>5.1</b> For three stride-1, 3 × 3 convolutions with no dilation, what is the theoretical receptive-field width? Does that guarantee equal influence from all covered pixels?</label><textarea id="q-5.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>r = 1 + 2×3 = 7. No: theoretical coverage describes possible paths, while learned weights, activations, and data determine actual influence.</p></details></article><article class="question"><label for="q-5.2"><b>5.2</b> A 224 × 224 image uses 16 × 16 patches. Excluding a class token, how many tokens and pairwise attention scores are there per head?</label><textarea id="q-5.2" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>(224/16)² = 196 patch tokens, and 196² = 38,416 scores per head. These are score counts, not total compute. A global attention route is available immediately, but useful relationships must still be learned.</p></details></article></div></section><section class="lab" id="exit"><div class="section-heading"><span class="section-number">06</span><div><span class="eyebrow">RETURN TO THE MISSION</span><h2>Make the decisions.</h2></div></div><p>You still have 120 leaf images and a pretrained ResNet-18. Now you have a sequence of testable choices.</p><div class="decision-strip"><span>1 / Split originals</span><span>2 / Match preprocessing</span><span>3 / Replace &amp; train head</span><span>4 / Validate adaptation</span><span>5 / Audit augmentations</span></div><article class="question"><label for="q-6.1"><b>6.1</b> Propose a first experiment and one follow-up if both training and validation accuracy remain poor. Name a leakage risk and explain whether you would immediately switch to a ViT.</label><textarea id="q-6.1" rows="3" placeholder="Predict first. Then explain your reasoning…"></textarea><details class="answer-fold"><summary>Reveal reasoning</summary><p>Begin with source-aware splits, checkpoint-compatible preprocessing, a frozen backbone and a new 3-class head. Train on suitable augmented training views and compare validation results. If both training and validation are poor, first inspect labels and the pipeline, then test selective fine-tuning or a better-matched checkpoint. Keep augmented siblings in the same split. A ViT is a candidate if global relations or suitable pretraining justify it; the small dataset alone is not a reason to expect it to win.</p></details></article><div class="minute"><span class="eyebrow">NEXT TIME</span><p>We gave patches permission to talk. How do they decide whom to listen to? That is the question attention will answer.</p></div><button id="export-answers">Download my answers</button><p class="caption">Answers save locally when browser storage is available. Download a text copy to keep or share your work.</p></section>
+<section id="check" data-section="07" class="lab">
+ <div class="section-heading"><span class="section-number">07</span><div><span class="eyebrow">FINAL REVIEW</span><h2>Eight questions,<br>then three sentences.</h2></div></div>
+ <div class="box hand final-review"><span class="tag">Multiple choice · type the letter or number</span><ol class="mcq-list">
+  <li data-review-question>A 512-feature backbone feeds a 3-class linear head with bias. How many head parameters are learned? <input class="qin" id="q-r1" data-a="1539" inputmode="numeric" aria-label="Final review answer 1"></li>
+  <li data-review-question>Fixed feature extraction means (a) train every layer slowly (b) keep the backbone fixed and train the new head (c) discard the backbone (d) update only BatchNorm statistics. <input class="qin" id="q-r2" data-a="b" aria-label="Final review answer 2"></li>
+  <li data-review-question>Two 2 × 2 feature maps are [1, 3; 2, 2] and [0, 2; 4, 2]. After global average pooling, type the vector as <b>2,2</b>. <input class="qin wide" id="q-r3" data-a="2,2|[2,2]" aria-label="Final review answer 3"></li>
+  <li data-review-question>A frozen weight starts at 2.000. Its gradient is 0.4 and the learning rate is 0.1. What is its value after the optimiser step? <input class="qin" id="q-r4" data-a="2|2.0|2.00|2.000" inputmode="decimal" aria-label="Final review answer 4"></li>
+  <li data-review-question>For a frozen BatchNorm backbone during fixed feature extraction, the safest default is (a) training mode with changing running statistics (b) evaluation mode with fixed running statistics (c) deleting BatchNorm (d) setting every activation to zero. <input class="qin" id="q-r5" data-a="b" aria-label="Final review answer 5"></li>
+  <li data-review-question>To prevent augmented siblings from leaking across splits, (a) augment first, then split views randomly (b) split original examples first, then augment training examples (c) augment validation only (d) merge train and test. <input class="qin" id="q-r6" data-a="b" aria-label="Final review answer 6"></li>
+  <li data-review-question>A horizontal flip for a left-versus-right arrow task is (a) always safe (b) unsafe unless the label is changed (c) safe only for validation (d) equivalent to brightness jitter. <input class="qin" id="q-r7" data-a="b" aria-label="Final review answer 7"></li>
+  <li data-review-question>A 224 × 224 image split into 16 × 16 patches creates 196 tokens. Excluding a class token, how many patch-to-patch attention scores are formed per head? <input class="qin wide" id="q-r8" data-a="38416|38,416" inputmode="numeric" aria-label="Final review answer 8"></li>
+ </ol><div class="chkrow"><button class="chkbtn" id="final-check" type="button">Check</button><span class="chkmsg" role="status"></span><details class="ans"><summary>Show answers</summary><div class="a"><p>1: 1,539 = 512 × 3 + 3. 2: (b). 3: [2, 2] because each map sums to 8 over four positions. 4: 2.000 because freezing blocks the optimiser update; the forward pass still uses the weight. 5: (b). 6: (b). 7: (b). 8: 38,416 = 196².</p></div></details></div></div>
+ <div class="box hand synthesis"><span class="tag">Explain in three sentences</span><p>Write one precise sentence for each decision. These are saved with your other worksheet answers.</p><ol>
+  <li data-synthesis-prompt><label for="q-r9">With 120 labelled leaf images and a pretrained ResNet-18, what first experiment would you run, and why?</label><textarea id="q-r9" rows="3" placeholder="Name the split, preprocessing, frozen backbone and new head…"></textarea></li>
+  <li data-synthesis-prompt><label for="q-r10">What validation result or failure pattern would make you unfreeze later layers?</label><textarea id="q-r10" rows="3" placeholder="Connect the evidence to selective fine-tuning…"></textarea></li>
+  <li data-synthesis-prompt><label for="q-r11">When would a ViT become a useful candidate for this task?</label><textarea id="q-r11" rows="3" placeholder="Mention global relationships, pretraining and validation…"></textarea></li>
+ </ol><details class="ans"><summary>Show model answers</summary><div class="a"><p>1. Split original images by source, apply the checkpoint's preprocessing, train a new 3-class head on a frozen backbone, and use suitable augmentation only on training data to establish a low-variance baseline. 2. If the pipeline and labels are sound but both training and validation remain weak, selectively unfreeze later layers with a smaller learning rate and compare on validation data. 3. A ViT becomes a useful candidate when distant relationships matter and a suitable pretrained checkpoint is available; the choice still needs a fair validation comparison.</p></div></details></div>
+</section><footer>DEEP LEARNING / BORROW · ADAPT · SEE FURTHER<br><a href="../cnn-architectures/">← CNN architectures</a> · <a href="#">All worksheets</a></footer></main></div><noscript><p class="noscript">Enable JavaScript to use the live labs. The explanations and questions remain available.</p></noscript>
+    <div id="complete-lecture-notes" class="lecture-notes-section">
+        <div class="notes-header">
+            <span class="eyebrow">LECTURE 13 · COMPLETE STUDY GUIDE & FORMULAS</span>
+            <h2>Transfer Learning & Pretrained Vision Backbones</h2>
+            <p>Full reference guide covering core mechanics, mathematical foundations, layer freezing, fine-tuning protocols, and Vision Transformers.</p>
+        </div>
+
+        <div class="notes-card">
+            <h3>1. The Small Target Data Problem</h3>
+            <p>Training deep convolutional architectures (e.g. ResNet-50 with ~25M parameters) from scratch on small datasets (50–500 images per class) leads to extreme variance and rapid overfitting. Pretrained backbones solve this by transferring spatial filters (Gabor-like edge detectors, textures, parts) learned on massive distributions (e.g. ImageNet with 1.4M images across 1,000 classes).</p>
+        </div>
+
+        <div class="notes-card">
+            <h3>2. The Four Transfer Regimes</h3>
+            <table class="notes-table">
+                <thead>
+                    <tr>
+                        <th>Target Dataset Size</th>
+                        <th>Domain Similarity</th>
+                        <th>Recommended Strategy</th>
+                        <th>Optimization Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Small</strong> (&lt; 1,000 images)</td>
+                        <td><strong>High</strong> (Natural images)</td>
+                        <td><strong>Feature Extraction (Linear Probe)</strong></td>
+                        <td>Freeze entire backbone (&theta;). Train only new linear head (&phi;). Fast, zero overfitting risk.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Large</strong> (&gt; 10,000 images)</td>
+                        <td><strong>High</strong> (Natural images)</td>
+                        <td><strong>Full Fine-Tuning</strong></td>
+                        <td>Initialize backbone from pretrained weights. Train all layers with lower learning rate (&eta;<sub>backbone</sub> &approx; 0.1 &times; &eta;<sub>head</sub>).</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Small</strong> (&lt; 1,000 images)</td>
+                        <td><strong>Low</strong> (Medical/X-ray/Satellite)</td>
+                        <td><strong>Mid-Level Feature Extraction</strong></td>
+                        <td>Freeze early generic layers (edges/colors); fine-tune later conv blocks + head.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Large</strong> (&gt; 10,000 images)</td>
+                        <td><strong>Low</strong> (Medical/Microscopy)</td>
+                        <td><strong>Progressive Unfreezing</strong></td>
+                        <td>Train head first, then unfreeze top-down with cosine learning rate warm-up.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="notes-card">
+            <h3>3. Mathematical Optimization & Freezing Formulation</h3>
+            <p>Let the complete network be represented by $y = g_\phi(f_	heta(x))$, where $f_	heta$ is the backbone and $g_\phi$ is the task head:</p>
+            <div class="notes-formula">
+                Objective: min<sub>&theta;, &phi;</sub> (1/N) &Sigma;<sub>i=1..N</sub> L(g<sub>&phi;</sub>(f<sub>&theta;</sub>(x<sub>i</sub>)), y<sub>i</sub>)
+            </div>
+            <p>When freezing the backbone:</p>
+            <div class="notes-formula">
+                Backbone Gradients: &nabla;<sub>&theta;</sub> L = 0  &rArr;  &theta;<sup>(t+1)</sup> = &theta;<sup>(t)</sup><br>
+                Head Update: &phi;<sup>(t+1)</sup> = &phi;<sup>(t)</sup> - &eta; &nabla;<sub>&phi;</sub> L
+            </div>
+            <p><strong>BatchNorm Warning:</strong> When freezing layers in PyTorch (<code>param.requires_grad = False</code>), ensure running statistics buffers are also placed in evaluation mode via <code>model.eval()</code>; otherwise, mini-batch statistics will corrupt pretrained running means and variances.</p>
+        </div>
+
+        <div class="notes-card">
+            <h3>4. Data Augmentation Mathematics & Safety Rules</h3>
+            <p>Augmentation samples transformations $T \sim \mathcal{A}$ to enforce invariance:</p>
+            <div class="notes-formula">
+                min<sub>&theta;, &phi;</sub> (1/N) &Sigma;<sub>i=1..N</sub> E<sub>T &sim; A</sub> [L(g<sub>&phi;</sub>(f<sub>&theta;</sub>(T(x<sub>i</sub>))), y<sub>i</sub>)]
+            </div>
+            <ul>
+                <li><strong>Semantic Label Preservation:</strong> A horizontal flip preserves "cat" or "leaf", but alters "arrow direction (left/right)" and handwritten digits ("6" &harr; "9"). Always verify semantic validity.</li>
+                <li><strong>Data Leakage Prevention:</strong> Always split dataset into Train, Validation, and Test sets <em>before</em> generating augmented copies. Never augment before splitting.</li>
+            </ul>
+        </div>
+
+        <div class="notes-card">
+            <h3>5. The Vision Transformer (ViT) Connection</h3>
+            <p>While CNNs rely on local convolution kernels and translation equivariance, Vision Transformers divide images into non-overlapping patches ($16 	imes 16$), flatten them into 1D tokens, add positional encodings, and apply multi-head self-attention. This enables direct, global context modeling across distant image regions without requiring deep stacks of receptive fields.</p>
+        </div>
+    </div>
+    
+<script>
+/* Exact toy computations for teaching; no model training or measured accuracy. */
+(function(root){
+ 'use strict';
+ const counts=[157504,11019008,1539];
+ function softmax(v){const m=Math.max(...v),e=v.map(x=>Math.exp(x-m)),s=e.reduce((a,b)=>a+b,0);return e.map(x=>x/s);}
+ function pool(maps){return maps.map(a=>a.flat().reduce((s,x)=>s+x,0)/a.flat().length);}
+ function classify(z){const logits=[z[0]-0.5*z[1]+1,-0.5*z[0]+z[1]+1];return {logits,probabilities:softmax(logits)};}
+ function update(w,g,lr,trainable){return trainable?w-lr*g:w;}
+ function trainableCount(flags){return flags.reduce((s,on,i)=>s+(on?counts[i]:0),0);}
+ function transform(x,kind,brightness=0){const n=x.length;return x.map((row,r)=>row.map((_,c)=>{
+ let v=kind==='flip'?x[r][n-1-c]:kind==='rotate'?x[n-1-c][r]:kind==='shift'?(c===0?0:x[r][c-1]):x[r][c];
+ return Math.max(0,Math.min(9,v+brightness));
+ }));}
+ function receptiveField(layers){return 1+2*layers;}
+ function patchStats(size,patch){const tokens=(size/patch)**2;return {tokens,pairs:tokens**2};}
+ const api={counts,softmax,pool,classify,update,trainableCount,transform,receptiveField,patchStats};
+ if(typeof module!=='undefined'&&module.exports)module.exports=api; else root.TransferModel=api;
+})(typeof window!=='undefined'?window:this);
+
+</script>
+<script>
+'use strict';
+(() => {
+ const M=window.TransferModel, $=id=>document.getElementById(id), fmt=n=>n.toLocaleString('en-US'), fixed=n=>Number(n.toFixed(3)).toString();
+ function matrix(values,title,extra){return `<div class="matrix-block"><table class="number-matrix ${extra?'rf-table':''}"><caption>${title}</caption><tbody>${values.map((row,r)=>`<tr>${row.map((v,c)=>`<td ${extra?`class="${extra(r,c)}"`:''} style="background:hsl(100 24% ${96-v*3}%)">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+ function pretrained(){const c=+$('classes').value,n=513*c;$('classes-value').textContent=c;
+ $('pretrained-flow').innerHTML=`<div class="node"><small>INPUT</small><strong>224 × 224 × 3</strong></div><b>→</b><div class="node reusable"><small>REUSED BACKBONE</small><strong>512 features</strong><span>11,176,512 parameters</span></div><b>→</b><div class="node mismatch"><small>NEW HEAD</small><strong>${c} class scores</strong><span>512 × ${c} weights + ${c} biases</span></div>`;
+ $('pretrained-count').innerHTML=`New head: <strong>${fmt(n)}</strong> parameters. Backbone + head: <strong>${fmt(11176512+n)}</strong>.<br>The backbone size stays fixed as the label dictionary changes.`;}
+ const examples={balanced:[[[1,3],[2,2]],[[0,2],[4,2]]],a:[[[2,4],[3,3]],[[0,1],[2,1]]],b:[[[0,1],[2,1]],[[2,4],[3,3]]]};
+ function features(){const maps=examples[$('feature-example').value],z=M.pool(maps),r=M.classify(z);
+ $('feature-maps').innerHTML=maps.map((a,i)=>matrix(a,`Channel ${i+1} → mean ${z[i]}`)).join('');
+ $('feature-readout').innerHTML=`Pooled vector z = <strong>[${z.join(', ')}]</strong><br>Class A: ${z[0]} − 0.5 × ${z[1]} + 1 = <b>${r.logits[0]}</b><br>Class B: −0.5 × ${z[0]} + ${z[1]} + 1 = <b>${r.logits[1]}</b>`;
+ $('feature-bars').innerHTML=r.probabilities.map((p,i)=>`<div class="prob-row"><span>Class ${i?'B':'A'}</span><div class="prob-track"><div class="prob-fill" style="width:${p*100}%"></div></div><b>${(p*100).toFixed(1)}%</b></div>`).join('');}
+ let weights=[2,2,2],steps=0,last='No step taken yet.';
+ const rates=[0.01,0.01,0.1],grad=[0.4,-0.2,0.6],groups=['Stem + layer1','Layer2–4','New head'];
+ const flags=()=>['early','late','head'].map(x=>$(`train-${x}`).checked);
+ function freezing(){const f=flags();$('freeze-route').innerHTML=weights.map((w,i)=>`<div class="freeze-block ${f[i]?'trainable':''}"><small>FORWARD PASS → ACTIVE</small><b>${groups[i]}</b><strong>${w.toFixed(3)}</strong><span class="state">${f[i]?'UNLOCKED · UPDATES':'FROZEN · FIXED'}<br>${fmt(M.counts[i])} parameters</span></div>`).join('');
+ $('freeze-readout').innerHTML=`<strong>${fmt(M.trainableCount(f))}</strong> / 11,178,051 trainable parameters.<br>Steps taken: ${steps}. ${last}${f.every(x=>!x)?'<br>No groups are trainable: prediction still runs, but no weights will learn.':''}`;}
+ $('sgd-step').addEventListener('click',()=>{const f=flags();weights=weights.map((w,i)=>M.update(w,grad[i],rates[i],f[i]));steps++;last='This step changed '+(groups.filter((_,i)=>f[i]).join(', ')||'no weights')+'.';freezing();});
+ $('sgd-reset').addEventListener('click',()=>{weights=[2,2,2];steps=0;last='Weights reset to 2.';freezing();});
+ const images={leaf:[[0,0,7,0],[0,7,9,7],[7,9,7,0],[0,7,0,0]],arrow:[[0,7,0,0],[7,7,7,7],[0,7,0,0],[0,0,0,0]]};
+ function augmentation(){const task=$('aug-task').value,kind=$('aug-transform').value,b=+$('brightness').value,x=images[task],y=M.transform(x,kind,b);$('brightness-value').textContent=b;
+ $('augmentation-matrices').innerHTML=matrix(x,'Original · values 0–9')+matrix(y,'Transformed · values 0–9');
+ let note=task==='arrow'&&kind==='flip'?'Label changes: left becomes right. Do not keep the original “left” label.':task==='arrow'&&kind==='rotate'?'Label leaves the task: left becomes up, which is neither left nor right. Exclude this transform for this two-class task.':kind==='shift'?'Inspect the crop: shifting discards the rightmost column. Keep the label only if enough identifying evidence remains.':task==='leaf'?'Plausibly label-preserving for leaf species. Confirm that shape and other species cues remain visible.':'The direction label is unchanged by this geometry.';
+ if(b!==0)note+=' Brightness is clipped to [0,9]; inspect whether important evidence disappears.';
+ $('augmentation-readout').textContent=note;$('augmentation-readout').classList.toggle('warning',task==='arrow'&&['flip','rotate'].includes(kind));}
+ function context(){const l=+$('depth').value,r=M.receptiveField(l),p=+$('patch').value,stats=M.patchStats(224,p);$('depth-value').textContent=l;
+ const x=Array.from({length:7},(_,i)=>Array.from({length:7},(_,j)=>(i===0&&j===0)||(i===6&&j===6)?9:0));
+ $('rf-grid').innerHTML=matrix(x,'7 × 7 input · marked corners = 9',(i,j)=>[Math.abs(i-3)<=l&&Math.abs(j-3)<=l?'covered':'',i===3&&j===3?'center':'',(i===0&&j===0)||(i===6&&j===6)?'marked':''].join(''))+`<p class="caption">Green: input positions in the centre output's theoretical receptive field. Orange outlines: the two distant marks. ${r>7?'The theoretical field extends beyond the image into padding.':''}</p>`;
+ $('context-readout').innerHTML=`CNN field: <strong>${r} × ${r}</strong> after ${l} layer${l===1?'':'s'}. ${l>=3?'Both corner marks are covered.':'Both corner marks are still outside the field.'}<br><br>ViT patch tokens: <strong>${stats.tokens}</strong><br>Patch-to-patch scores per head: <strong>${fmt(stats.pairs)}</strong><br><small>224 × 224 input, ${p} × ${p} patches. Class token excluded.</small>`;}
+ [['classes',pretrained],['feature-example',features],...['early','late','head'].map(x=>['train-'+x,freezing]),...['aug-task','aug-transform','brightness'].map(x=>[x,augmentation]),...['depth','patch'].map(x=>[x,context])].forEach(([id,fn])=>$(id).addEventListener('input',fn));
+ [pretrained,features,freezing,augmentation,context].forEach(f=>f());
+ document.querySelectorAll('.chkbtn').forEach(btn=>btn.addEventListener('click',()=>{
+  const box=btn.closest('.box'),inputs=[...box.querySelectorAll('.qin')],msg=box.querySelector('.chkmsg');let right=0;
+  inputs.forEach(inp=>{const raw=inp.value.trim(),normalise=s=>s.trim().toLowerCase().replace(/\s+/g,''),answers=inp.dataset.a.split('|');let ok=answers.some(a=>normalise(raw)===normalise(a));
+   if(!ok&&/^[-+]?[\d,.]+$/.test(raw)){const value=Number(raw.replace(/,/g,''));ok=answers.some(a=>Number.isFinite(value)&&value===Number(a.replace(/,/g,'')));}
+   inp.classList.toggle('ok',ok);inp.classList.toggle('no',raw!==''&&!ok);if(ok)right++;
+  });
+  msg.textContent=right===inputs.length?`All ${inputs.length} correct.`:`${right} of ${inputs.length} correct. Fix the red boxes and check again.`;msg.classList.toggle('good',right===inputs.length);
+ }));
+ const prefix='dl-transfer-v1:';
+ document.querySelectorAll('textarea, .qin').forEach(el=>{try{el.value=localStorage.getItem(prefix+el.id)||'';}catch{$('saved-status').textContent='Storage unavailable; download answers to keep them.';}el.addEventListener('input',()=>{el.classList.remove('ok','no');try{localStorage.setItem(prefix+el.id,el.value);$('saved-status').textContent='Answers saved in this browser.';}catch{$('saved-status').textContent='Storage unavailable; download answers to keep them.';}});});
+ $('export-answers').onclick=()=>{const written=Array.from(document.querySelectorAll('textarea')).map(el=>document.querySelector(`label[for="${el.id}"]`).textContent+'\n'+el.value),review=Array.from(document.querySelectorAll('.qin')).map((el,i)=>`Final review ${i+1}: ${el.value}`),text='TRANSFER LEARNING — MY WORKSHEET ANSWERS\n\n'+written.concat(review).join('\n\n');const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='transfer-learning-answers.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+ $('print').onclick=()=>window.print();
+ if('IntersectionObserver' in window){const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}});},{rootMargin:'-15% 0px -65% 0px'});document.querySelectorAll('section[id]').forEach(x=>obs.observe(x));}
+})();
+
+</script>
+<script>
+/* Planned lecture beats. Each checkpoint pauses autoplay BEFORE its answer. */
+(function(root){
+ const step=(title,narration,equation,checkpoint=false)=>({title,narration,equation,checkpoint});
+ const stories={
+ pretrained:{title:'Borrow the eyes. Replace the dictionary.',subtitle:'Follow the same learned filters into a new task.',note:'Architecture diagram; the small filter values illustrate reused weights, not an extracted ResNet checkpoint.',steps:[
+ step('Start with a source task','A pretrained CNN has already learned filters. Its original head turns those features into scores for 1,000 source labels.','Image → learned backbone → 1,000 source scores'),
+ step('Keep the learned numbers','Look at the numbered filter inside the backbone. Reusing a checkpoint means carrying learned parameter values forward.','The same θ* will initialize the target backbone.'),
+ step('A new task arrives','Our 120 leaf images have three species labels. The existing visual vocabulary may help, but the old label dictionary does not answer this task. Predict: which part should we replace?','PREDICT · Keep the backbone, the head, or both?',true),
+ step('Detach the old head','The 1,000-class head leaves the pipeline. Watch what stays: the learned filter values are unchanged.','Remove 512 × 1,000 + 1,000 = 513,000 head parameters.'),
+ step('Attach a new three-class head','A new head arrives with three outputs. It starts without knowledge of the leaf labels and must be trained.','New head: 512 × 3 + 3 = 1,539 parameters.'),
+ step('Run the target image through','The signal still passes through the reused backbone. Freezing is a later choice about updates; it does not remove this computation.','x → fθ*(x), a 512-feature vector → three task scores'),
+ step('Choose what gets to learn','Begin by training the new head. Validate that baseline, then decide whether adapting some pretrained layers is useful.','Reuse is a starting hypothesis. Validation decides whether it helps.') ]},
+ features:{title:'Watch four numbers become one feature.',subtitle:'Accumulate, average, combine, then normalize.',note:'Exact two-channel, two-class toy example. Features are hand-designed; no real leaf model runs here.',steps:[
+ step('Read the two feature maps','Each channel contains four responses. Predict each channel mean before we move a single value.','Channel 1: [1, 3, 2, 2] · Channel 2: [0, 2, 4, 2]'),
+ step('Collect the first cell','The highlighted cells send their values to separate accumulators. Channels are pooled independently.','S₁ = 1 · S₂ = 0 · collected 1 of 4 cells'),
+ step('Add the second cell','Move across the first row. The accumulator keeps what was already collected.','S₁ = 1 + 3 = 4 · S₂ = 0 + 2 = 2'),
+ step('Add the third cell','Move down to the next row. Spatial positions disappear from this summary; channel identity remains.','S₁ = 4 + 2 = 6 · S₂ = 2 + 4 = 6'),
+ step('Finish the sums — predict the means','Both sums are 8. We collected four values from each channel. What goes into the feature vector?','PREDICT · z₁ = 8 / 4 = ? · z₂ = 8 / 4 = ?',true),
+ step('Divide and build the vector','Each sum is divided by the number of spatial positions. The two means travel into their vector slots.','z = [8/4, 8/4] = [2, 2]'),
+ step('Apply the new head','Each row of W reads both features. Bias is added once per class. Follow each contribution to its class score.','W = [[1, −0.5], [−0.5, 1]], b = [1, 1] → scores [2, 2]'),
+ step('Normalize the scores','Equal logits give equal softmax probabilities. A different head could read the same features differently.','pA = e²/(e²+e²) = 0.5 · pB = 0.5') ]},
+ freezing:{title:'Two passes. One update policy.',subtitle:'The forward route stays alive even when weights are locked.',note:'One representative scalar per group; fixed illustrative gradients, plain SGD. This is an update demonstration, not a training simulation.',steps:[
+ step('Lock the backbone, unlock the head','All representative weights start at 2. Only the new head is trainable. Locks refer to parameters, not to whether a layer executes.','Trainable groups: head only · ηhead = 0.1'),
+ step('Send the image forward','Follow the green signal through early layers, later layers and the head. A frozen group still computes features.','Forward computation: early → late → head → loss'),
+ step('The loss asks for a change','The loss has been evaluated. Predict: with the backbone frozen, which displayed weights may move?','PREDICT · wearly = 2, wlate = 2, whead = 2 — what changes?',true),
+ step('Route the parameter gradient','The orange update signal targets the head. No parameter update is requested for the locked backbone groups in this baseline.','Illustrative head gradient: ∂L/∂whead = +0.6'),
+ step('Take the head-only step','Only the head value changes. Compare its before and after values while the backbone stays exactly at 2.','whead = 2 − 0.1 × 0.6 = 1.940'),
+ step('Now unlock the later group','Keep the early group fixed, but allow the later group to adapt. Use a smaller learning rate for its pretrained weights.','ηlate = 0.01 · illustrative gradient glate = −0.2'),
+ step('Send updates to two groups','The head receives its illustrative gradient again. The later group now also receives an update signal.','Δwlate = −0.01 × (−0.2) = +0.002 · Δwhead = −0.060'),
+ step('Compare the next step','The later group moves upward because its gradient is negative. The head takes a second step. The early group stays frozen.','wearly = 2.000 · wlate = 2.002 · whead = 1.880') ]},
+ augmentation:{title:'Move the pixels. Reconsider the label.',subtitle:'Track every value through a flip before trusting the training pair.',note:'Synthetic 4 × 4 images with intensities 0–9. Geometry moves values exactly; the shape is only a teaching illustration.',steps:[
+ step('Split original examples first','The 120 originals are assigned to train, validation and test. Only training examples receive random augmentation in this baseline.','84 train · 18 validation · 18 test'),
+ step('Make a new view of a training image','Copy the leaf pixels into a second view. It is still a view of the same original, not a new independent labelled example.','Original label: leaf species A'),
+ step('Flip each row horizontally','Watch values move to mirrored columns. Rows stay fixed, and the text on a pixel remains upright.','x′[r,c] = x[r, 3−c] · each row reverses independently'),
+ step('Pause at the label','The mirrored leaf may still be species A. Would this exact same operation be safe for every classification task?','PREDICT · Does a horizontal flip always preserve a label?',true),
+ step('Change the task to arrow direction','Start again with a left-pointing arrow. This time the label is its direction, not its object category.','Input label: LEFT · allowed classes: LEFT / RIGHT'),
+ step('Apply the identical flip','The pixels follow the same coordinate rule, but the arrow now points right. Keeping LEFT would create an incorrect training pair.','Transformed image: RIGHT · unchanged training label: LEFT → invalid'),
+ step('Repair the training pair','For this task, either exclude the flip or deliberately change the target to RIGHT. Label preservation depends on what is being predicted.','A valid pair must keep the image and its target consistent.'),
+ step('Add brightness and expose clipping','Add 3 to the flipped intensities. Sevens become 9, not 10, because the range is clipped. Check that evidence remains usable.','x″ = min(9, max(0, x′ + 3)) · 7 + 3 → 9'),
+ step('Keep the evaluation boundary','Useful augmentation changes training views within justified limits. Validation and test retain their chosen consistent preprocessing.','More views ≠ more independent originals.') ]},
+ context:{title:'From neighbouring pixels to distant evidence.',subtitle:'Grow a CNN’s reach, then follow a patch-attention route.',note:'Receptive-field geometry is exact. Patch tokens and scalar attention values are a separate hand-designed example, not a trained ViT.',steps:[
+ step('Two marks, one question','The label depends on the two corner marks. We follow the input positions that can influence the central output.','7 × 7 image · orange corners hold value 9'),
+ step('One local convolution','A 3 × 3, stride-1 convolution reaches a 3 × 3 input neighbourhood. Both distant marks are still outside it.','r₁ = 1 + (3−1) = 3'),
+ step('Stack another local step','A second such layer grows the field to 5 × 5. Predict the next width, and whether it reaches both corners.','PREDICT · r₃ = 5 + (3−1) = ?',true),
+ step('Three layers connect the corners','The theoretical field is now 7 × 7. A CNN can gather global context; coverage does not guarantee equal influence or useful learning.','r₃ = 7 · both marks are inside the theoretical field'),
+ step('Try a different representation','For a separate 6 × 6 toy image, cut nine 2 × 2 patches. Gaps reveal the patch boundaries without changing pixel values.','9 patches × 4 pixels · flatten and project each patch'),
+ step('Give each patch a token and a position','The patch groups become symbolic embeddings, then receive position information. Their displayed indices are identities, not embedding dimensions.','ti = E · vec(patchi) + positioni'),
+ step('Let one token read every token','Follow messages from all nine tokens into query 5. Line thickness represents illustrative attention weights; the weights need not be equal.','a = [0.05, 0.05, 0.10, 0.10, 0.40, 0.05, 0.10, 0.05, 0.10]'),
+ step('Combine the values','For scalar toy values V = [1,…,9], the weighted sum is 5.15. Global attention offers a direct route, not an automatic guarantee of good predictions.','output₅ = Σ aiVi = 5.15 · attention weights sum to 1'),
+ step('Count the price of global connections','Return to a 224 × 224 image: 16 × 16 patches give 196 tokens. Full attention creates a score for each token pair per head.','196² = 38,416 scores · 32 × 32 patches: 49² = 2,401 · class token excluded') ]}
+ };
+ // Slow down motion that requires students to track individual pixel identities.
+ stories.augmentation.steps[2].transition=4200;
+ stories.augmentation.steps[5].transition=4200;
+ stories.context.steps[4].transition=2200;
+ stories.context.steps[5].transition=2600;
+ if(typeof module!=='undefined'&&module.exports)module.exports=stories;else root.TransferStories=stories;
+})(typeof window!=='undefined'?window:this);
+
+</script>
+<script>
+/* Deterministic teaching player. Motion and dwell share one cancellable clock. */
+(function(root){
+ function createPlayer(steps,render,options={}){
+  const request=options.request||requestAnimationFrame,cancel=options.cancel||cancelAnimationFrame;
+  const reduced=options.reduced||(()=>false),baseTransition=options.transition||1400,hold=options.hold||4600;
+  const state={index:0,progress:1,playing:false,speed:1,checkpoint:false};
+  const motion=()=>steps[state.index].transition||baseTransition;
+  let handle=null,last=null,elapsed=motion(),destroyed=false;
+  const emit=()=>{state.checkpoint=!!steps[state.index].checkpoint&&state.progress===1;render({...state});};
+  function clear(){if(handle!==null)cancel(handle);handle=null;last=null;}
+  function queue(){if(!destroyed&&handle===null)handle=request(tick);}
+  function tick(t){handle=null;if(destroyed)return;if(last===null)last=t;elapsed+=(t-last)*state.speed;last=t;state.progress=Math.min(1,elapsed/motion());
+   if(state.progress===1&&steps[state.index].checkpoint&&state.playing){state.playing=false;}
+   if(state.playing&&elapsed>=motion()+hold){if(state.index===steps.length-1){state.playing=false;}else{state.index++;elapsed=0;state.progress=0;}}
+   emit();if(state.playing||state.progress<1)queue();else last=null;
+  }
+  function set(index,animate){clear();state.playing=false;state.index=Math.max(0,Math.min(steps.length-1,index));state.progress=animate&&!reduced()?0:1;elapsed=state.progress*motion();emit();if(state.progress<1)queue();}
+  const api={state,play(){if(destroyed)return;if(reduced()){set(Math.min(steps.length-1,state.index+1),false);return;}clear();if(state.index===steps.length-1&&state.progress===1){state.index=0;state.progress=1;elapsed=motion();}else if(steps[state.index].checkpoint&&state.progress===1){state.index++;state.progress=0;elapsed=0;}state.playing=true;emit();queue();},
+   pause(){clear();state.playing=false;emit();},next(){set(state.index+1,true);},previous(){set(state.index-1,false);},restart(){set(0,false);},
+   seek(position){clear();state.playing=false;const v=Math.max(0,Math.min(steps.length-1,Number(position)));state.index=Math.ceil(v);state.progress=v===Math.floor(v)?1:v-Math.floor(v);elapsed=state.progress*motion();emit();},
+   speed(value){state.speed=Math.max(.25,Math.min(3,Number(value)));emit();},destroy(){clear();destroyed=true;state.playing=false;}
+  };emit();return api;
+ }
+ if(typeof module!=='undefined'&&module.exports)module.exports={createPlayer};else root.TransferTimeline={createPlayer};
+})(typeof window!=='undefined'?window:this);
+
+</script>
+<script>
+/* Numerical scene renderers. Every frame is a deterministic function of beat + progress. */
+(function(root){
+ const M=typeof module!=='undefined'&&module.exports?require('./model'):root.TransferModel;
+ const C={ink:'#173d36',muted:'#5b7166',teal:'#17685d',mint:'#d9e8d7',paper:'#f7f6ee',white:'#fffefa',line:'#c9d5c6',gold:'#f0ce81',orange:'#b95632',pale:'#f9e7d6'};
+ const clamp=t=>Math.max(0,Math.min(1,t)),ease=t=>{t=clamp(t);return t*t*(3-2*t);},mix=(a,b,t)=>a+(b-a)*t;
+ const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+ const txt=(x,y,s,size=20,color=C.ink,weight=500,anchor='start',extra='')=>`<text x="${x}" y="${y}" font-size="${size}" fill="${color}" font-weight="${weight}" text-anchor="${anchor}" ${extra}>${escape(s)}</text>`;
+ const rect=(x,y,w,h,fill=C.white,stroke=C.line,r=12,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" ${extra}/>`;
+ const group=(s,opacity=1,tx=0,ty=0)=>opacity<=0?'':`<g opacity="${clamp(opacity)}" transform="translate(${tx} ${ty})">${s}</g>`;
+ function arrow(x1,y1,x2,y2,color=C.teal,width=3,opacity=1,dash=''){
+  const a=Math.atan2(y2-y1,x2-x1),r=9,px=x2-r*Math.cos(a),py=y2-r*Math.sin(a),dx=5*Math.sin(a),dy=5*Math.cos(a);
+  return `<g opacity="${opacity}"><path d="M${x1},${y1} L${x2},${y2}" fill="none" stroke="${color}" stroke-width="${width}" ${dash?`stroke-dasharray="${dash}"`:''}/><path d="M${x2},${y2} L${px+dx},${py-dy} L${px-dx},${py+dy}Z" fill="${color}"/></g>`;
+ }
+ const dot=(x,y,r=8,color=C.teal)=>`<circle cx="${x}" cy="${y}" r="${r+6}" fill="${color}" opacity=".14"/><circle cx="${x}" cy="${y}" r="${r}" fill="${color}"/>`;
+ function cell(x,y,v,size=44,{highlight=false,muted=false,marked=false}={}){
+  const fill=highlight?C.gold:muted?C.paper:`hsl(105 22% ${96-Math.min(9,Math.abs(Number(v)||0))*2.7}%)`;
+  return rect(x,y,size-3,size-3,fill,marked?C.orange:highlight?C.orange:C.line,4,marked?'stroke-width="3"':'')+txt(x+(size-3)/2,y+(size-3)/2+7,v,22,C.ink,600,'middle');
+ }
+ function grid(values,x,y,size=44,highlight=()=>false){return values.map((r,i)=>r.map((v,j)=>cell(x+j*size,y+i*size,v,size,{highlight:highlight(i,j)})).join('')).join('');}
+ const tag=(x,y,w,label,fill=C.mint,color=C.teal)=>rect(x,y,w,32,fill,'none',16)+txt(x+w/2,y+22,label,16,color,600,'middle');
+ const leaf=(x,y,scale=1)=>`<g transform="translate(${x} ${y}) scale(${scale})"><path d="M0 65 Q-15 12 62 0 Q79 66 0 65Z" fill="#86a987" stroke="${C.teal}" stroke-width="3"/><path d="M-8 80L54 12M12 54L3 30M25 39L53 38" fill="none" stroke="${C.teal}" stroke-width="3"/></g>`;
+ const label=(x,y,title,sub)=>txt(x,y,title,20,C.ink,700)+txt(x,y+27,sub,16,C.muted);
+ function pretrained(s,p){
+  const t=ease(p),target=s>=2,swap=s===2?t:target?1:0;
+  let a=label(55,40,target?'TARGET TASK':'SOURCE TASK',target?'120 leaf images · 3 species':'Learned on an earlier dataset');
+  a+=rect(45,95,175,245)+group(txt(132,135,'SOURCE',16,C.muted,600,'middle')+rect(75,155,57,70,C.mint)+rect(140,155,57,70,C.pale)+txt(135,272,'many labels',18,C.muted,500,'middle'),1-swap);
+  a+=group(leaf(90,155,1.2)+txt(132,285,'new leaf image',18,C.ink,600,'middle'),swap);
+  a+=rect(285,95,365,245,C.mint,C.teal)+txt(467,128,'REUSED BACKBONE',17,C.teal,700,'middle');
+  const kernel=[[-1,0,1],[-1,0,1],[-1,0,1]];
+  a+=grid(kernel,310,155,43,()=>s===1)+txt(515,190,'edges',20)+txt(515,224,'textures',20)+txt(515,258,'parts',20)+txt(467,320,'learned θ* stays in place',18,C.teal,600,'middle');
+  a+=arrow(227,215,277,215)+arrow(660,215,730,215);
+  a+=rect(745,95,205,245,'none',C.line,12,'stroke-dasharray="7 7"');
+  if(s<=3){const q=s===3?t:0;a+=group(rect(745,95,205,245,s===2?C.pale:C.white)+txt(847,132,'OLD HEAD',17,C.orange,700,'middle')+txt(847,190,'1,000',42,C.ink,600,'middle')+txt(847,223,'source scores',19,C.muted,500,'middle')+(s===2?txt(847,287,'No leaf labels',18,C.orange,700,'middle'):txt(847,287,'source labels',18,C.muted,500,'middle')),1-q,0,-q*90);}
+  if(s>=4){const q=s===4?t:1;a+=group(rect(745,95,205,245,C.pale,C.orange)+txt(847,132,'NEW HEAD',17,C.orange,700,'middle')+[0,1,2].map(i=>rect(783,160+i*43,130,30,C.white,C.orange,7)+txt(848,181+i*43,`species ${'ABC'[i]}`,18,C.ink,600,'middle')).join('')+txt(847,320,'1,539 parameters',18,C.orange,600,'middle'),q,(1-q)*85,0);}
+  if(s===5)a+=dot(mix(210,930,t),355,9);
+  a+=arrow(205,355,935,355,C.teal,2,s>=5?.55:.13);
+  if(s>=4)a+=tag(310,374,280,'512 features → 3 scores');
+  if(s>=6)a+=tag(758,374,180,'TRAIN THIS HEAD',C.pale,C.orange)+arrow(849,370,849,341,C.orange);
+  if(s===3)a+=group(txt(847,220,'empty socket',20,C.muted,500,'middle'),t);
+  a+=txt(55,450,s>=6?'Reuse learned values; train the new mapping; validate.':'Watch the filter numbers: changing the task does not reset them.',19,C.muted);
+  return a;
+ }
+ const maps=[[[1,3],[2,2]],[[0,2],[4,2]]],prefix=[[0,1,4,6,8],[0,0,2,6,8]];
+ function features(s,p){
+  const t=ease(p),k=Math.min(4,s),active=s>=1&&s<=4?s-1:-1;
+  let a=label(48,35,'TWO FEATURE CHANNELS','Spatial values are pooled within each channel.');
+  maps.forEach((m,c)=>{const y=108+c*172;a+=txt(48,y-14,`Channel ${c+1}`,18,C.teal,700)+grid(m,48,y,54,(r,col)=>r*2+col===active);
+   a+=arrow(185,y+51,342,y+51,C.teal,2,.4);
+   if(s<=4){const n=active>=0&&t<.98?k-1:k,acc=prefix[c][Math.max(0,n)];a+=rect(355,y-3,238,112,C.white)+txt(473,y+28,'ACCUMULATOR',16,C.muted,600,'middle')+txt(473,y+74,`${acc}`,35,C.teal,700,'middle');
+    if(active>=0){const sx=48+(active%2)*54+25,sy=y+Math.floor(active/2)*54+28,tx=473,ty=y+69;
+     a+=group(rect(mix(sx,tx,t)-22,mix(sy,ty,t)-27,44,44,C.gold,C.orange,8)+txt(mix(sx,tx,t),mix(sy,ty,t)+3,m.flat()[active],25,C.ink,700,'middle'),t<.98?1:0);}
+   }else{a+=rect(355,y-3,238,112,C.mint,C.teal)+txt(473,y+28,'GLOBAL MEAN',16,C.teal,600,'middle')+txt(473,y+74,'8 ÷ 4 = 2',29,C.teal,700,'middle');}
+  });
+  if(s<=4){a+=rect(673,110,269,265,C.paper)+txt(808,153,'FEATURE VECTOR',16,C.muted,600,'middle')+txt(808,235,'[ ?, ? ]',38,C.muted,600,'middle')+txt(808,319,s===4?'Both sums are 8.':'Collect four per channel.',18,C.muted,500,'middle');}
+  if(s===5){a+=rect(673,110,269,265,C.mint,C.teal)+txt(808,153,'FEATURE VECTOR z',16,C.teal,600,'middle');[0,1].forEach(c=>{const x=782+c*60,y=231;a+=rect(x-24,y-30,50,54,C.white)+group(txt(mix(473,x,t),mix(182+c*172,y+7,t),'2',32,C.teal,700,'middle'));});a+=txt(808,319,'one value per channel',18,C.muted,500,'middle');}
+  if(s>=6){a+=txt(689,79,'dashed links: ×−0.5',17,C.orange,600);[0,1].forEach(c=>{const y=108+c*172,show=s>6?1:clamp(t*2-c);a+=arrow(603,y+48,678,y+48,C.teal,2)+arrow(603,108+(1-c)*172+48,678,y+48,C.orange,2,.65,'4 4')+txt(637,y+35,'×1',15,C.teal,600,'middle')+rect(686,y-3,255,112,C.pale,C.orange)+txt(813,y+26,`CLASS ${c?'B':'A'} SCORE`,16,C.orange,600,'middle')+group(txt(813,y+71,'2 − 1 + 1 = 2',24,C.ink,700,'middle'),show);});}
+  a+=rect(48,422,894,10,C.line,'none',5);
+  if(s>=7){a+=rect(48,422,447*t,10,C.teal,'none',5)+rect(48+447,422,447*t,10,C.orange,'none',5)+txt(48,411,'Class A · 50%',18,C.teal,600)+txt(942,411,'Class B · 50%',18,C.orange,600,'end');}
+  else a+=txt(48,408,s===4?'PAUSE · Four values, sum 8. What should the mean be?':s>=5?'The spatial maps have become a compact description.':`${k} of 4 positions collected in each channel`,18,C.muted);
+  return a;
+ }
+ function freezing(s,p){
+  const t=ease(p),late=s>=5,whead=s>=7?(t>.85?1.88:1.94):s>=4?(s===4&&t<=.85?2:1.94):2,wlate=s>=7&&t>.85?2.002:2;
+  let a=label(48,37,'FOLLOW THE TWO DIRECTIONS','Green: forward computation · orange: parameter update signals');
+  const xs=[55,305,555],names=['EARLY GROUP','LATER GROUP','NEW HEAD'],weights=[2,wlate,whead];
+  xs.forEach((x,i)=>{const train=i===2||(i===1&&late);a+=rect(x,105,206,157,train?C.pale:C.mint,train?C.orange:C.teal)+tag(x+21,120,164,train?'UNLOCKED':'LOCKED',train?C.pale:C.mint,train?C.orange:C.teal)+txt(x+103,183,names[i],17,C.ink,700,'middle')+txt(x+103,228,weights[i].toFixed(3),32,C.ink,700,'middle');a+=txt(x+103,292,'forward active',17,C.teal,600,'middle');});
+  a+=rect(820,105,126,157,s>=2?C.pale:C.white)+txt(883,180,'LOSS',20,C.ink,700,'middle')+txt(883,219,'L',36,C.orange,600,'middle');
+  [0,1].forEach(i=>a+=arrow(xs[i]+212,186,xs[i+1]-8,186));a+=arrow(768,186,812,186);
+  a+=arrow(57,307,946,307,C.teal,3,.4);if(s===1)a+=dot(mix(57,943,t),307,10,C.teal);
+  if(s>=3){a+=arrow(883,350,658,350,C.orange,3);a+=txt(770,378,'ghead = +0.6',18,C.orange,600,'middle');if(s===3||s===6)a+=dot(mix(883,658,t),350,9,C.orange);}
+  if(s>=6){a+=arrow(650,350,408,350,C.orange,3)+txt(500,378,'glate = −0.2',18,C.orange,600,'middle');if(s===6)a+=dot(mix(650,408,t),350,9,C.orange);}
+  if(s===4||s===7){const active=s===4?[2]:[1,2];active.forEach(i=>{const x=xs[i]+103;a+=arrow(x,340,x,268,C.orange,3)+dot(x,mix(340,270,t),8,C.orange);});}
+  if(s>=4)a+=tag(580,406,350,s>=7?'head: 1.940 → 1.880':'head: 2.000 → 1.940',C.pale,C.orange);
+  a+=txt(55,442,s>=7?'early: 2.000 → 2.000 · late: 2.000 → 2.002':'Frozen does not mean bypassed.',19,C.teal,600);
+  return a;
+ }
+ const leafPixels=[[0,0,7,0],[0,7,9,7],[7,9,7,0],[0,7,0,0]],arrowPixels=[[0,7,0,0],[7,7,7,7],[0,7,0,0],[0,0,0,0]];
+ function augmentation(s,p){
+  const t=ease(p),isArrow=s>=4,source=isArrow?arrowPixels:leafPixels;
+  let a=tag(45,21,282,'TRAIN · 84 originals',C.mint)+tag(345,21,285,'VALIDATION · 18 originals',C.paper,C.muted)+tag(648,21,303,'TEST · 18 originals',C.paper,C.muted);
+  a+=txt(160,102,'TRAINING ORIGINAL',18,C.teal,700,'middle')+txt(638,102,'TRANSFORMED VIEW',18,C.teal,700,'middle');
+  a+=grid(source,48,124,57);
+  a+=rect(520,124,228,228,C.paper,C.line,4,'stroke-dasharray="7 7"');
+  if(s>=1){source.forEach((row,r)=>row.forEach((v,c)=>{
+   let x=520+c*57,y=124+r*57,opacity=1;
+   if(s===1){x=mix(48+c*57,x,t);y=124+r*57-25*Math.sin(t*Math.PI);opacity=t;}
+   if(s===2||s===5){const q=ease(clamp((p-(c%2)*.12)/.88));x=mix(520+c*57,520+(3-c)*57,q);y=124+r*57+(c<2?-18:18)*Math.sin(q*Math.PI);}
+   else if(s===3||s>=6)x=520+(3-c)*57;
+   let value=v;
+   if(s>=7)value=s===7?(t>.5?Math.min(9,v+3):v):Math.min(9,v+3);
+   a+=group(cell(x,y,value,57,{highlight:(s===2||s===5)&&t<1,marked:s>=7&&v===7}),opacity);
+  }));}
+  a+=arrow(300,235,483,235,C.teal,3,.6);
+  a+=txt(388,202,s===1?'COPY':s>=7?'ADD 3 + CLIP':'FLIP COLUMNS',17,C.teal,700,'middle');
+  a+=tag(63,370,194,isArrow?'label: LEFT':'label: species A',C.mint);
+  if(s>=1){const bad=s===5,right=s>=6;const labelText=bad?'label: LEFT ✕':right?'label: RIGHT':'label: '+(isArrow?'LEFT':'species A');a+=tag(525,370,223,labelText,bad?C.pale:C.mint,bad?C.orange:C.teal);}
+  a+=rect(802,124,146,228,s===5?C.pale:C.white)+txt(875,159,'LABEL',17,C.muted,600,'middle')+txt(875,189,'CHECK',17,C.muted,600,'middle');
+  a+=txt(875,257,s===5?'INVALID':s===3?'PREDICT':s>=6?'REPAIRED':'?',s>=3?19:48,s===5?C.orange:C.teal,700,'middle');
+  if(s>=7)a+=txt(875,303,'7 + 3 → 9',18,C.orange,600,'middle');
+  a+=txt(48,444,s===5?'Same pixel rule. Different meaning. The old label is now wrong.':s===3?'Is this transform safe for every task? Predict before continuing.':s>=8?'Augmented siblings belong to the same source split.':'Every displayed number stays attached to its moving pixel.',19,s===5?C.orange:C.muted);
+  return a;
+ }
+ const attentionWeights=[.05,.05,.1,.1,.4,.05,.1,.05,.1];
+ function attentionSum(){return attentionWeights.reduce((a,v,i)=>a+v*(i+1),0);}
+ function context(s,p){
+  const t=ease(p);let a='';
+  if(s<=3){a+=label(50,36,'CNN · BUILD CONTEXT THROUGH DEPTH','The centre output can only use positions inside its field.');
+   const x=70,y=99,cs=43;const vals=Array.from({length:7},(_,r)=>Array.from({length:7},(_,c)=>(r===0&&c===0)||(r===6&&c===6)?9:0));
+   a+=grid(vals,x,y,cs);a+=rect(x,y,40,40,'none',C.orange,4)+rect(x+6*cs,y+6*cs,40,40,'none',C.orange,4);
+   const width=s===0?1:mix(1+2*(s-1),1+2*s,t),n=width*cs;
+   a+=rect(x+3.5*cs-n/2,y+3.5*cs-n/2,n-3,n-3,C.teal,C.teal,4,'fill-opacity=".14" stroke-width="3"');
+   a+=rect(470,105,456,285,C.white)+txt(698,161,`${s} CONVOLUTION${s===1?'':'S'}`,18,C.muted,600,'middle')+txt(698,235,`${1+2*s} × ${1+2*s}`,56,C.teal,600,'middle')+txt(698,288,s===3?'Both corner marks are reachable.':'The corners are outside the field.',21,C.ink,500,'middle')+txt(698,339,'kernel 3 × 3 · stride 1',19,C.muted,500,'middle');
+   a+=txt(50,451,s===3?'Theoretical coverage ≠ equal influence. CNNs can learn global context.':'Watch the field grow by two input positions per layer.',19,C.muted);
+  }else if(s<=5){a+=label(50,36,'ViT · FROM PIXELS TO POSITIONED TOKENS','Separate toy image: 6 × 6 pixels → nine 2 × 2 patches.');
+   for(let k=0;k<9;k++){const row=Math.floor(k/3),col=k%3,gap=s===4?mix(0,17,t):17;let x=53+col*(96+gap),y=105+row*(96+gap);
+    const tx=543+col*132,ty=113+row*103;
+    if(s===5){x=mix(x,tx,t);y=mix(y,ty,t);}
+    const patch=[[k%3,(k+1)%5],[(k+2)%7,k===4?9:1]];
+    if(s===4)a+=grid(patch,x,y,47)+txt(x+44,y+106,`P${k+1}`,15,C.teal,700,'middle');
+    else a+=group(grid(patch,x,y,47),1-t)+group(rect(x,y,116,72,C.mint,C.teal)+txt(x+58,y+29,`TOKEN ${k+1}`,17,C.teal,700,'middle')+txt(x+58,y+54,`+ position ${k+1}`,16,C.muted,500,'middle'),t);
+   }
+   if(s===4){a+=rect(518,111,417,279,C.white)+txt(727,164,'SPLIT → FLATTEN',22,C.teal,700,'middle')+txt(727,213,'PROJECT → ADD POSITION',20,C.teal,700,'middle')+txt(727,289,'Patch IDs track identity.',19,C.muted,500,'middle')+txt(727,322,'They are not embedding values.',19,C.muted,500,'middle');}
+   else {a+=group(txt(70,177,'4 pixels',29,C.teal,600)+arrow(70,209,355,209,C.teal,3)+txt(70,249,'learned projection',24,C.teal,600)+txt(70,285,'+ position information',22,C.muted),clamp((t-.6)/.4));}
+   a+=txt(50,461,'The token retains a patch’s information in a learned feature vector.',19,C.muted);
+  }else if(s<=7){a+=label(50,36,'GLOBAL ATTENTION · ONE QUERY, EVERY KEY','Toy scalar values V = [1, …, 9]; illustrative non-uniform weights.');
+   const qx=729,qy=245;
+   for(let k=0;k<9;k++){const x=50+(k%3)*134,y=104+Math.floor(k/3)*105,w=attentionWeights[k];
+    a+=arrow(x+113,y+38,qx-62,qy,C.teal,1+w*12,.45);
+    if(s===6){const u=clamp((p-(k%3)*.09)/.82);a+=dot(mix(x+113,qx-62,u),mix(y+38,qy,u),4+w*10,C.teal);}
+    a+=rect(x,y,111,76,k===4?C.pale:C.mint,k===4?C.orange:C.teal)+txt(x+55,y+29,`V${k+1} = ${k+1}`,20,C.ink,700,'middle')+txt(x+55,y+57,`a = ${w.toFixed(2)}`,17,C.teal,500,'middle');
+   }
+   a+=rect(qx-60,qy-69,246,141,C.teal,C.teal)+txt(qx+63,qy-24,'QUERY 5',20,C.white,700,'middle')+txt(qx+63,qy+29,s===7?'5.15':'Σ aiVi',40,C.white,600,'middle');
+   if(s===7)a+=tag(638,354,293,'weights sum to 1');
+   a+=txt(50,450,'Thickness shows different weights. Every token is eligible to contribute.',19,C.muted);
+  }else{a+=label(50,36,'GLOBAL CONNECTIONS HAVE A COST','224 × 224 input · patch tokens only · one attention head');
+   const sizes=[16,32];sizes.forEach((patch,i)=>{const st=M.patchStats(224,patch),x=52+i*460;
+    a+=rect(x,100,423,299,i?C.pale:C.mint)+txt(x+211,141,`${patch} × ${patch} PATCHES`,20,i?C.orange:C.teal,700,'middle')+txt(x+211,216,`${st.tokens} tokens`,37,C.ink,600,'middle')+txt(x+211,292,st.pairs.toLocaleString('en-US'),46,i?C.orange:C.teal,700,'middle')+txt(x+211,333,'token-pair scores',19,C.muted,500,'middle');
+   });a+=txt(50,452,'Fewer, larger patches reduce pair count but give coarser spatial detail.',19,C.muted);
+  }
+  return a;
+ }
+ const renderers={pretrained,features,freezing,augmentation,context};
+ function render(name,index,progress=1){if(!renderers[name])throw new Error('Unknown animation');const p=clamp(progress);return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" class="teaching-svg" role="img" aria-label="${escape(name)} animation, beat ${index+1}" data-beat="${index}" data-progress="${p.toFixed(3)}"><rect width="1000" height="480" fill="${C.paper}"/><g font-family="system-ui, sans-serif">${renderers[name](index,p)}</g></svg>`;}
+ const api={render,attentionWeights,attentionSum};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TransferScenes=api;
+})(typeof window!=='undefined'?window:this);
+
+</script>
+<script>
+/* Guided visual demonstrations embedded in each lecture section. */
+'use strict';
+(() => {
+ const players=[], reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const names={pretrained:'pretraining',features:'feature extraction',freezing:'layer freezing',augmentation:'augmentation',context:'CNN and ViT'};
+ function stopOthers(current){players.forEach(p=>{if(p!==current)p.pause();});}
+ document.querySelectorAll('[data-animation]').forEach((host,index)=>{
+  const key=host.dataset.animation,story=window.TransferStories[key],name=names[key];if(!story)return;
+  const id=`animation-${key}-${index}`;
+  host.innerHTML=`<div class="anim-heading"><div><span class="eyebrow">GUIDED WALKTHROUGH / ${String(index+1).padStart(2,'0')}</span><h3>${story.title}</h3><p>${story.subtitle}</p></div></div>
+  <div class="anim-toolbar" aria-label="${name} playback controls"><button class="anim-play" aria-label="Play ${name} animation">▶ Play</button><button class="anim-previous" aria-label="Previous ${name} beat">← Back</button><button class="anim-next" aria-label="Next ${name} beat">Next →</button><button class="anim-replay" aria-label="Replay ${name} animation">↺ Replay</button><label for="${id}-speed">Speed<select id="${id}-speed" class="anim-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><span class="anim-counter"></span></div>
+  <div class="anim-viewport" tabindex="0" role="region" aria-label="${name} animated diagram; scroll horizontally on small screens"><div class="anim-canvas"></div></div><p class="anim-pan-hint">Swipe the diagram to follow the full scene. Pixel numbers stay at a readable size.</p>
+  <div class="anim-timeline"><label for="${id}-timeline">Scrub the sequence<input id="${id}-timeline" type="range" min="0" max="${story.steps.length-1}" step="0.01" value="0" class="anim-scrubber"></label><button class="anim-download">Download frame ↓</button></div>
+  <div class="anim-beats" role="group" aria-label="${name} storyboard beats">${story.steps.map((step,i)=>`<button aria-label="${name}: ${step.title}" data-beat="${i}"><span>${String(i+1).padStart(2,'0')}</span>${step.title}${step.checkpoint?' <i>Predict</i>':''}</button>`).join('')}</div>
+  <div class="anim-caption" aria-live="polite"><div class="anim-caption-top"><span class="anim-phase"></span><h4></h4></div><p class="anim-narration"></p><div class="anim-equation"></div><p class="anim-prompt" hidden>Pause here for student predictions. Choose “Continue” or “Next” when ready to reveal.</p></div><p class="anim-assumptions">${story.note}</p><p class="anim-reduced" ${reduced.matches?'':'hidden'}>Reduced motion is on. Play and Next reveal stable steps without moving the diagram.</p>`;
+  const $=sel=>host.querySelector(sel),canvas=$('.anim-canvas'),play=$('.anim-play');let lastBeat=-1,lastFrame='',current={index:0,progress:1};
+  const player=window.TransferTimeline.createPlayer(story.steps,state=>{
+   current=state;const step=story.steps[state.index],frameKey=`${state.index}:${state.progress.toFixed(3)}`;
+   if(lastFrame!==frameKey){canvas.innerHTML=window.TransferScenes.render(key,state.index,state.progress);lastFrame=frameKey;}
+   host.dataset.currentBeat=String(state.index);host.dataset.playing=String(state.playing);host.dataset.checkpoint=String(state.checkpoint);
+   play.textContent=state.playing?'Ⅱ Pause':state.checkpoint?'▶ Continue':'▶ Play';play.setAttribute('aria-label',`${state.playing?'Pause':state.checkpoint?'Continue':'Play'} ${name} animation`);
+   $('.anim-previous').disabled=state.index===0;$('.anim-next').disabled=state.index===story.steps.length-1;
+   $('.anim-counter').textContent=`${state.index+1} / ${story.steps.length} beats`;
+   const position=state.index===0?0:state.index-1+state.progress;$('.anim-scrubber').value=String(position);$('.anim-scrubber').setAttribute('aria-valuetext',`Beat ${state.index+1}: ${step.title}`);
+   if(lastBeat!==state.index){$('.anim-caption h4').textContent=step.title;$('.anim-narration').textContent=step.narration;$('.anim-equation').textContent=step.equation;
+    host.querySelectorAll('.anim-beats button').forEach((b,i)=>{b.classList.toggle('current',i===state.index);b.setAttribute('aria-pressed',String(i===state.index));});lastBeat=state.index;}
+   $('.anim-phase').textContent=step.checkpoint?'PREDICT BEFORE REVEAL':'FOLLOW THE MECHANISM';$('.anim-prompt').hidden=!state.checkpoint;$('.anim-caption').classList.toggle('is-checkpoint',state.checkpoint);
+  },{reduced:()=>reduced.matches});
+  players.push(player);
+  play.onclick=()=>{if(player.state.playing)player.pause();else{stopOthers(player);player.play();}};
+  $('.anim-next').onclick=()=>{stopOthers(player);player.next();};$('.anim-previous').onclick=()=>player.previous();$('.anim-replay').onclick=()=>player.restart();
+  $('.anim-speed').onchange=e=>player.speed(+e.target.value);$('.anim-scrubber').oninput=e=>{stopOthers(player);player.seek(+e.target.value);};
+  host.querySelectorAll('.anim-beats button').forEach(b=>b.onclick=()=>{stopOthers(player);player.seek(+b.dataset.beat);});
+  $('.anim-download').onclick=()=>{const svg=canvas.innerHTML;const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));const a=document.createElement('a');a.href=url;a.download=`${key}-beat-${String(current.index+1).padStart(2,'0')}.svg`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)player.pause();});
+  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)player.pause();},{threshold:0});observer.observe(host);}
+  reduced.addEventListener('change',()=>{player.pause();$('.anim-reduced').hidden=!reduced.matches;});
+ });
+})();
+
+</script>
+</body></html>

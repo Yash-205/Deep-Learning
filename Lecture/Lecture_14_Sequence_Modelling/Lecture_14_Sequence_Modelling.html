@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#124b47"><meta name="description" content="A first encounter with sequential data, hidden state, RNN unrolling and long-term dependencies. Six guided animations, numerical experiments and worked understanding checks."><title>Remember what came before · Sequence Modelling</title><style>
+/* Self-contained lecture theme, inspired by the collection's CNN worksheet. */
+:root{--paper:#f6f4ed;--white:#fffefa;--ink:#183c35;--muted:#586c62;--teal:#12655b;--deep:#124b47;--mint:#dceadd;--line:#cbd7ca;--coral:#b24a30;--sand:#f4e5d0;--gold:#e2b457;--sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}html{scroll-padding-top:105px}body{margin:0;background:var(--paper);font:16px/1.75 var(--sans);color:var(--ink)}a{color:var(--teal);text-underline-offset:4px}button,input,select,textarea{font:inherit}button,select,summary{cursor:pointer}button,.button{border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);padding:9px 14px;font-size:13px;font-weight:600;text-decoration:none;display:inline-block}button:hover,.button:hover{border-color:var(--teal);background:var(--mint)}button:disabled{opacity:.45;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid #a06610;outline-offset:4px}input[type=range]{accent-color:var(--teal);width:100%}input[type=radio]{accent-color:var(--teal);width:18px;height:18px;flex:none}select,input[type=text],textarea{border:1px solid #99afa0;background:var(--white);border-radius:7px;padding:9px 10px;max-width:100%;color:var(--ink)}textarea{width:100%;min-height:110px;resize:vertical}::selection{background:var(--gold)}[hidden]{display:none!important}.skip{position:fixed;top:-80px;left:20px;background:white;padding:12px;z-index:100}.skip:focus{top:12px}
+.topbar{position:sticky;top:0;z-index:20;min-height:78px;background:#f6f4edf5;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:14px 30px}.brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:var(--ink);font-size:11px;font-weight:750;letter-spacing:.13em;line-height:1.5}.brand small{display:block;letter-spacing:0;font-size:12px;font-weight:400;color:var(--muted)}.logo{width:39px;height:39px;background:var(--deep);color:var(--mint);border-radius:50%;display:grid;place-items:center;font:29px Georgia,serif}.progress-wrap{margin-left:auto;max-width:230px;width:25%;font-size:11px;color:var(--muted)}progress{display:block;width:100%;height:5px;accent-color:var(--teal);margin-top:6px;border:0;background:var(--line)}progress::-webkit-progress-bar{background:var(--line)}progress::-webkit-progress-value{background:var(--teal)}.topbar .quiet{background:none;font-weight:400}
+.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;max-width:1450px;margin:0 auto;padding:45px 36px 80px}.sidebar{position:sticky;top:120px;align-self:start;max-height:calc(100vh - 145px);overflow:auto}.eyebrow,.step-label{font:500 11px/1.6 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}.sidebar nav{display:flex;flex-direction:column;gap:5px;margin:20px 0}.sidebar nav a{font-size:13px;text-decoration:none;padding:10px 9px;border-radius:7px;color:var(--muted);display:flex;gap:10px}.sidebar nav a span{font:11px var(--mono);padding-top:4px;opacity:.7}.sidebar nav a[aria-current]{color:var(--teal);background:var(--mint);font-weight:650}.sidebar-note{border-top:1px solid var(--line);margin-top:22px;padding-top:20px;font-size:18px;line-height:1.55}.sidebar .asset-link{display:block;font-size:12px;margin-top:12px}.prose{max-width:1080px;min-width:0}h1{font-size:clamp(43px,5.2vw,76px);line-height:1.09;font-weight:500;letter-spacing:-.065em;margin:25px 0}h1 em{font-family:Georgia,serif;font-weight:400;color:var(--teal)}h2{font-size:clamp(28px,3.2vw,43px);line-height:1.16;font-weight:500;letter-spacing:-.045em;margin:6px 0 0}h3{font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.025em}h4{font-size:18px;margin:5px 0}p{margin:12px 0}.intro .back{font-size:12px;display:inline-block;margin-bottom:28px}.intro .lede{max-width:680px;font-size:18px;color:var(--muted);line-height:1.8}.pills{display:flex;flex-wrap:wrap;gap:9px;margin:22px 0 30px}.pills span{padding:5px 10px;background:#e8ede2;border-radius:5px;font-size:11px;color:var(--teal)}.orientation{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;margin:25px 0 50px}.orientation b{display:block;font:11px var(--mono);color:var(--teal)}.orientation p{font-size:12px;color:var(--muted);margin:6px 0}
+.mission{background:var(--deep);color:var(--white);border-radius:18px;padding:32px;margin:0 0 40px}.mission .eyebrow{color:#cce0c8}.mission h2{font-size:31px;color:var(--white);max-width:680px}.mission-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:26px;margin-top:24px}.cue-card{background:#ffffff12;border:1px solid #ffffff40;border-radius:12px;padding:22px}.cue-word{font:30px var(--mono);letter-spacing:.14em;color:#efcd82;display:block;margin:8px 0 18px}.mission p,.mission li{font-size:14px;line-height:1.8}.mission ol{padding-left:22px}.mission .note{font-size:12px;color:#d2dfd5}.learning-goals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.learning-goals>div{border-left:2px solid var(--line);padding:0 15px;font-size:13px}.learning-goals b{display:block;font-size:15px;margin-bottom:5px}.bridge{background:#e8ede2;border-radius:10px;padding:16px 20px;font-size:14px;margin:25px 0}
+.lab{margin-top:75px;padding-top:36px;border-top:1px solid var(--line);scroll-margin-top:20px}.section-heading{display:flex;gap:20px;align-items:flex-start;margin-bottom:30px}.section-number{font:24px var(--mono);color:#6a8977;padding-top:6px;min-width:36px}.step-label{display:block;margin:24px 0 10px}.lesson-hook>p{font-size:25px;line-height:1.5;letter-spacing:-.025em;max-width:790px;margin:8px 0 18px}.hook-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}.hook-card{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:17px 20px}.hook-card small{display:block;color:var(--muted);font:11px var(--mono);margin-bottom:8px}.hook-card b{font-size:19px;font-weight:550}.hook-card mark{background:var(--mint);padding:2px 5px;color:var(--teal)}.problem-visual{margin:22px 0;padding:22px;border:1px solid var(--line);border-radius:14px;background:#edeee5}.problem-visual img{display:block;width:100%;height:auto}.problem-visual figcaption{font-size:13px;line-height:1.7;color:var(--muted);margin-top:15px}.problem-visual .step-label{margin-top:0}.problem-flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.problem-flow>div{flex:1;min-width:140px;padding:15px;border:1px solid #bccdba;background:var(--white);border-radius:10px}.problem-flow b{display:block;font-size:18px}.problem-flow span{font-size:12px;color:var(--muted)}.lesson-explanation p{line-height:1.9;max-width:850px}.analogy{border-left:3px solid #9dbb9d;padding:2px 18px;margin:20px 0}.analogy p{font-size:15px}.formula-card{padding:21px 24px;background:var(--mint);border:1px solid #bacfba;border-radius:12px;margin:24px 0 12px}.formula-card .step-label{margin:0 0 10px}.equation{font:21px/1.75 var(--mono);overflow-x:auto;white-space:normal}.notation{font-size:12px;color:#3c5e4c;margin-top:10px}.theory-fold{border:1px solid var(--line);border-radius:11px;margin:14px 0;background:var(--white)}summary{padding:15px 19px;font-size:14px;font-weight:600}summary small{font-weight:400;color:var(--muted);margin-left:6px}.fold-body{padding:0 23px 20px}.fold-body p,.fold-body li{font-size:14px;line-height:1.85}.fold-body h3{font-size:18px;margin-top:23px}.fold-body ul{padding-left:20px}.math-scroll{overflow:auto}.math-table{border-collapse:collapse;width:100%;min-width:400px;font-size:13px;margin:15px 0}.math-table th,.math-table td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left}.math-table th{font-size:11px;color:var(--muted)}.math-table .number{font-family:var(--mono)}.caution{padding:12px 17px;border-left:3px solid var(--coral);background:#f5ebdf;font-size:13px;margin:20px 0}.matrix-row{display:flex;gap:22px;align-items:center;flex-wrap:wrap}.matrix{border-collapse:collapse;font:18px var(--mono);margin:10px 0}.matrix caption{font:13px var(--sans);padding:8px;text-align:left}.matrix td{border:1px solid #bdcdbb;text-align:center;padding:12px 16px;background:#e6eee1}
+.animation{background:var(--white);border:1px solid var(--line);border-radius:16px;margin:18px 0 30px;overflow:hidden}.anim-heading{padding:23px 25px 10px}.anim-heading h3{margin:6px 0}.anim-heading p{font-size:13px;color:var(--muted);margin:8px 0}.lab-controls{display:flex;flex-wrap:wrap;gap:15px;background:#edf0e7;padding:16px 24px;border-block:1px solid var(--line)}.lab-controls label{flex:1 1 145px;font-size:12px;min-width:0;max-width:280px}.lab-controls select{display:block;margin-top:6px;width:100%;font-size:13px}.lab-controls output{float:right;font:13px var(--mono);color:var(--teal)}.lab-controls .preset-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.lab-controls .preset-row button{font-size:12px}.anim-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:15px 24px 6px}.anim-play{background:var(--deep);color:var(--white);min-width:103px}.anim-play:hover{background:var(--teal);color:white}.anim-toolbar label{font-size:11px;margin-left:auto;display:flex;align-items:center;gap:8px}.anim-toolbar select{font-size:12px;padding:6px}.anim-counter{font:11px var(--mono);color:var(--muted)}.anim-viewport{overflow-x:auto;overscroll-behavior-x:contain;padding:8px 14px 0}.anim-canvas{min-width:740px}.anim-canvas svg{display:block;width:100%;height:auto}.anim-pan-hint{display:none;font-size:11px;color:var(--muted);padding:0 20px}.anim-timeline{display:flex;gap:20px;align-items:center;padding:0 24px 15px}.anim-timeline label{font-size:11px;color:var(--muted);flex:1}.anim-download{font-size:11px;white-space:nowrap}.anim-beats{display:flex;gap:6px;overflow:auto;padding:8px 24px 16px}.anim-beats button{flex:1 0 95px;max-width:145px;text-align:left;font-size:11px;font-weight:400;line-height:1.45}.anim-beats button span{display:block;font:10px var(--mono);opacity:.7;margin-bottom:5px}.anim-beats .current{background:var(--mint);border-color:var(--teal);color:var(--teal)}.anim-beats i{font-style:normal;color:var(--coral);font-size:10px;display:block;margin-top:5px}.anim-caption{padding:20px 24px;background:#eaf0e2;border-top:1px solid var(--line);min-height:176px}.anim-caption.is-checkpoint{background:var(--sand);border-color:#d3b681}.anim-phase{font:10px var(--mono);letter-spacing:.06em;color:var(--teal)}.anim-caption h4{font-size:19px;line-height:1.35;margin:6px 0}.anim-narration{font-size:14px;line-height:1.8;margin:8px 0}.anim-equation{font:13px/1.8 var(--mono)}.anim-prompt{font-size:12px;font-weight:600;color:var(--coral)}.anim-assumptions,.anim-reduced{padding:0 24px;font-size:11px;line-height:1.8;color:var(--muted)}.readout{padding:16px 24px 21px;border-top:1px solid var(--line)}.readout .stats{display:flex;gap:13px;flex-wrap:wrap}.stat{flex:1 1 140px;padding:12px 15px;border-radius:8px;background:#f0f1e8}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{font:23px var(--mono);color:var(--teal);display:block}.readout p{font-size:12px;color:var(--muted)}.try-this{font-size:13px;background:var(--sand);padding:15px 20px;border-radius:9px;margin:15px 0 24px}.try-this b{font:11px var(--mono);color:var(--coral);display:block;margin-bottom:5px}
+.question-grid{display:grid;grid-template-columns:1fr;gap:13px}.check{padding:21px 24px;border:1px solid var(--line);border-radius:12px;background:var(--white)}.check .qnum{font:11px var(--mono);color:var(--teal)}.check h3{font-size:16px;font-weight:550;line-height:1.7;margin:7px 0 12px;letter-spacing:0}.check input[type=text]{width:160px;font-family:var(--mono);font-size:16px}.answer-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.options{border:0;padding:0;margin:0 0 15px;display:flex;gap:10px;flex-wrap:wrap}.options legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.options label{display:flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--line);border-radius:6px;font-size:13px;max-width:100%}.feedback{font-size:13px;margin:7px 0 0;color:var(--coral)}.check.correct{border-color:#72a782}.check.correct .feedback{color:var(--teal)}.answer{margin-top:12px}.answer summary{font-size:12px;color:var(--teal);padding:5px 0}.answer div{font-size:13px;line-height:1.8;padding:5px 0}.exit-grid{display:grid;gap:18px;margin-top:22px}.exit-grid label{font-size:14px;display:block;margin-bottom:9px}.exit-ticket{padding:26px;border-radius:14px;background:var(--mint)}.closing{font:24px/1.5 Georgia,serif;padding:25px 0;color:var(--teal)}.resources{margin-top:70px;border-top:1px solid var(--line);padding-top:25px;font-size:13px}.resources h2{font-size:28px}.resources li{margin:12px 0}.resource-links{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}.storage-note{font-size:11px;color:var(--muted)}footer{font-size:12px;color:var(--muted);padding:28px 0 10px}.noscript{padding:16px;background:var(--sand)}
+@media(min-width:1500px){.layout{gap:60px}}@media(max-width:1120px){.layout{grid-template-columns:165px minmax(0,1fr);gap:26px;padding:35px 24px}.anim-pan-hint{display:block}.brand small{display:none}.topbar{gap:12px}.topbar button{padding:7px 9px}.learning-goals{gap:9px}}@media(max-width:800px){.layout{display:block;padding:24px 18px}.sidebar{position:relative;top:auto;max-height:none;margin-bottom:32px}.sidebar>.eyebrow,.sidebar-note,.sidebar>.asset-link{display:none}.sidebar nav{flex-direction:row;overflow:auto;margin:0;gap:6px}.sidebar nav a{flex:none;padding:8px 12px;background:#e8ede2}.sidebar nav a span{display:none}.topbar{padding:12px 16px;min-height:68px;flex-wrap:wrap;gap:10px}.topbar .brand{font-size:10px}.topbar .quiet{display:none}.progress-wrap{width:130px;font-size:10px}.topbar #print{display:none}.mission{padding:24px}.mission-grid{grid-template-columns:1fr}.learning-goals{grid-template-columns:1fr;gap:15px}.orientation{gap:15px;margin-bottom:30px}.hook-pair{grid-template-columns:1fr}.lab{margin-top:48px;padding-top:28px}.section-heading{gap:12px}.lesson-hook>p{font-size:22px}.anim-heading{padding:20px}.anim-toolbar{padding:12px 17px}.lab-controls{padding:14px 18px}.anim-beats{padding:8px 18px 15px}.anim-caption{padding:18px;min-height:205px}.anim-timeline{padding:0 18px 12px}.formula-card{padding:18px}.equation{font-size:17px}.check{padding:18px}.options{flex-direction:column;align-items:flex-start}.options label{width:100%}.problem-visual{padding:16px}.question-grid{display:block}.check{margin-bottom:12px}.lab-controls label{max-width:none}.mission h2{font-size:28px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+@media print{@page{margin:16mm}body{background:white;font-size:11pt;color:#152d26}.topbar,.sidebar,.skip,.anim-toolbar,.anim-beats,.anim-timeline,.anim-pan-hint,.lab-controls,.resource-links,button,.progress-wrap,.storage-note,.anim-reduced,.noscript{display:none!important}.layout{display:block;padding:0}.prose{max-width:none}.intro h1{font-size:36pt}.lab{margin-top:25px;padding-top:20px;break-before:page}.mission{background:#eef3e9;color:#183c35;border:1px solid #bbcdb5;padding:20px}.mission h2,.mission .eyebrow,.mission .note,.cue-word{color:#183c35}.cue-card{border-color:#bbcdb5}.anim-canvas{min-width:0}.anim-viewport{overflow:visible;padding:0}.animation,.formula-card,.check,.hook-card{break-inside:avoid}.anim-caption{min-height:0;padding:12px}.anim-heading{padding:12px}.readout{padding:12px}.math-table{min-width:0}.answer{display:none}.theory-fold:not([open]){display:none}.lesson-explanation p{font-size:11pt}.resources{break-before:page}.mission-grid{grid-template-columns:1fr 1fr}textarea{min-height:80px}.cue-word{visibility:visible!important}}
+
+
+/* In-Depth Lecture Notes & Reference Guide Styles */
+.lecture-notes-section {
+    max-width: 1180px;
+    margin: 60px auto 100px;
+    padding: 40px;
+    background: #ffffff;
+    border: 1px solid var(--line, #e2e8f0);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    color: var(--ink, #183c35);
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.75;
+}
+.notes-header {
+    border-bottom: 2px solid var(--teal, #12655b);
+    padding-bottom: 20px;
+    margin-bottom: 35px;
+}
+.notes-header .eyebrow {
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal, #12655b);
+    display: block;
+    margin-bottom: 8px;
+}
+.notes-header h2 {
+    font-size: 34px;
+    margin: 0 0 10px;
+    color: var(--teal, #12655b);
+    font-family: Georgia, serif;
+}
+.notes-header p {
+    font-size: 16px;
+    color: var(--muted, #64736f);
+    margin: 0;
+}
+.notes-card {
+    background: #fbfdfb;
+    border: 1px solid var(--line, #e2e8f0);
+    border-left: 4px solid var(--teal, #12655b);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 25px 0;
+}
+.notes-card h3 {
+    margin-top: 0;
+    font-size: 22px;
+    color: var(--ink, #183c35);
+    font-family: Georgia, serif;
+}
+.notes-formula {
+    background: #f4f6f4;
+    border: 1px solid #dbe3dc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 15px;
+    overflow-x: auto;
+    color: #11362e;
+}
+.notes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 15px;
+}
+.notes-table th, .notes-table td {
+    padding: 12px 16px;
+    border: 1px solid var(--line, #e2e8f0);
+    text-align: left;
+}
+.notes-table th {
+    background: #f5f8f6;
+    font-weight: 700;
+    color: var(--teal, #12655b);
+}
+.nav-toggle-bar {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+.nav-toggle-btn {
+    background: var(--teal, #12655b);
+    color: #ffffff !important;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.nav-toggle-btn:hover {
+    background: #0d4b44;
+}
+
+</style>
+</head>
+<body><a href="#main" class="skip">Skip to worksheet</a>
+<header class="topbar">
+    <div class="nav-toggle-bar">
+        <a href="#main" class="nav-toggle-btn">Interactive Lab ↗</a>
+        <a href="#complete-lecture-notes" class="nav-toggle-btn">Complete Lecture Notes & Formulas ↓</a>
+    </div>
+    <a class="brand" href="#main"><span class="logo">λ</span><span>DEEP LEARNING<small>Presentation &amp; practice sheets</small></span></a><div class="progress-wrap"><span id="progress-label">0 of 15 checks understood</span><progress id="progress" value="0" max="15" aria-label="Correct understanding checks"></progress></div><button id="export">Save my answers ↓</button><button id="print">Print</button><button id="reset" class="quiet">Reset answers</button></header>
+<div class="layout"><aside class="sidebar"><div class="eyebrow">Lecture / sequences</div><nav aria-label="Worksheet sections"><a href="#mission" aria-current="location"><span>00</span>The memory challenge</a><a href="#order"><span>01</span>Order is information</a><a href="#tasks"><span>02</span>Inputs &amp; targets</a><a href="#state"><span>03</span>A running state</a><a href="#unroll"><span>04</span>Unroll the RNN</a><a href="#dependencies"><span>05</span>Distant dependencies</a><a href="#exit"><span>06</span>Bring it together</a></nav><div class="sidebar-note">Same rule.<br>New moment.<br>What survives?</div><a class="asset-link" href="assets/gallery.html">Figure gallery ↗</a><a class="asset-link" href="student-handout.html">Printable practice ↗</a><a class="asset-link" href="instructor-guide.md">Instructor guide ↗</a><a class="asset-link" href="#references">Reading &amp; notation ↗</a></aside>
+<main id="main" class="prose">
+<div class="intro"><a class="back" href="#">← All presentation &amp; practice sheets</a><div class="eyebrow">A first encounter with sequence modelling</div><h1>Remember what<br><em>came before.</em></h1><p class="lede">A word changes the meaning of a sentence. A frame changes the direction of a journey. Today we give a network a past—and discover why keeping that past is harder than it looks.</p><div class="pills"><span>85-minute teaching route</span><span>6 guided animations</span><span>15 understanding checks</span><span>No coding required</span></div></div>
+<div class="orientation"><div><b>01 / PREDICT</b><p>Commit to an answer before the reveal.</p></div><div><b>02 / TRACE</b><p>Follow the information and the numbers.</p></div><div><b>03 / EXPLAIN</b><p>Change one thing. Explain what changes.</p></div></div>
+<noscript><p class="noscript">JavaScript is off. The lesson, formulas, worked answers and <a href="assets/gallery.html">static figure gallery</a> still work. Enable JavaScript for animation, experiments and answer checks.</p></noscript>
+<section id="mission" class="mission"><div class="eyebrow">00 / A small challenge for your memory</div><h2>Can one clue survive an entire lecture?</h2><div class="mission-grid"><div class="cue-card"><p>Read this word once. Hide it. Keep it for the end.</p><strong id="cue-word" class="cue-word">ORCHID</strong><button id="hide-cue" aria-controls="cue-word" aria-expanded="true">Hide the word</button><p class="note">No tricks: we will ask for exactly this word.</p></div><div><p>A model faces a similar problem: an early clue can matter only after many later inputs.</p><ol><li>If we ignore order, what information disappears?</li><li>How can the same network read a short or a long sequence?</li><li>If a clue matters much later, can the model learn to keep it?</li></ol><p class="note">Keep the third question open. We need the first two ideas to answer it.</p></div></div></section>
+<div class="learning-goals"><div><b>Recognise</b>When order and the available past change a prediction.</div><div><b>Trace</b>A hidden state through time while the weights stay shared.</div><div><b>Diagnose</b>Why a long path can weaken or amplify a learning signal.</div></div>
+<p class="bridge"><b>From the last lecture:</b> a CNN reuses a detector across spatial locations. An RNN reuses a state-update rule across time steps. In both cases, sharing parameters is a useful assumption about the problem.</p>
+
+<section id="order" class="lab" data-section="order"><div class="section-heading"><span class="section-number">01</span><div><div class="eyebrow">Sequential data intuition / 12 minutes</div><h2>The order is part<br>of the evidence.</h2></div></div>
+<div class="lesson-hook" data-step="hook"><span class="step-label">01 / The hook</span><p>Same three words. Same three frames. Can they tell different stories?</p><div class="hook-pair"><div class="hook-card"><small>SEQUENCE A</small><b><mark>dog</mark> bites person</b></div><div class="hook-card"><small>SEQUENCE B</small><b>person bites <mark>dog</mark></b></div></div></div>
+<figure class="problem-visual" data-step="problem"><span class="step-label">02 / See the problem</span><div class="problem-flow"><div><b>Frames: left → centre → right</b><span>A dot moves right.</span></div><span aria-hidden="true">≠</span><div><b>Frames: right → centre → left</b><span>The same dot moves left.</span></div></div><figcaption>Count the frames or average their pixels and the two journeys look identical. Direction depends on how the frames are ordered, not just on which frames exist.</figcaption></figure>
+<div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / The idea &amp; an analogy</span><p>A <b>sequence</b> is an ordered collection of observations. Its steps can be words, audio samples, sensor readings, clicks or video frames. A step may be one number or a whole vector. The index <i>t</i> tells us where the observation sits; it need not represent one second.</p><div class="analogy"><p><b>Think of sheet music.</b> A bag containing all the right notes does not specify the melody. We need both the notes and their order. In the same way, a model may need “what happened before” to interpret “what is happening now”.</p></div><p>For a temperature forecast, 18 → 21 → 24 and 24 → 21 → 18 have the same mean but different trends. We should preserve order when it is relevant to the target. Some tasks, such as summing a shopping basket, deliberately ignore order.</p></div>
+<div class="formula-card" data-step="formula"><span class="step-label">04 / The formula</span><div class="equation">X = (x₁, x₂, …, x<sub>T</sub>)<br>order-blind mean: m = (1/T) Σ<sub>t=1…T</sub> x<sub>t</sub></div><p class="notation"><b>T</b>: number of steps · <b>xₜ ∈ ℝᵈ</b>: the d features at step t · rearranging the terms leaves the mean unchanged, even if the sequence's meaning changes.</p></div>
+<details class="theory-fold"><summary>Go deeper <small>Sets, windows, and what a CNN can already do</small></summary><div class="fold-body"><h3>Order sensitivity is a property of the whole pipeline</h3><p>A mean or sum is permutation-invariant: reordering its inputs does not change it. If two different sequences map to the same summary, a deterministic model that only sees that summary cannot distinguish them. A flattened ordered window does retain positions. An MLP on that window can learn order-sensitive rules, but its input size is fixed unless we add a strategy for variable length.</p><h3>RNNs are one solution, not the definition of sequence modelling</h3><p>Temporal convolutions can learn local sequence patterns; their context depends on kernel size, depth, dilation and causal padding. Attention-based models can mix information across positions. A recurrent network offers another useful assumption: update a state as each observation arrives. We study it to make context and memory explicit.</p><h3>Time comes with a measurement convention</h3><p>In irregularly sampled measurements, equal index gaps need not mean equal elapsed time. Supply time gaps or use a suitable model when timing matters. We assume equally indexed steps in these demonstrations.</p><p><b>Worked mean:</b> the centre row of our three image frames is [1,0,0], [0,1,0], [0,0,1]. Their mean is [⅓,⅓,⅓] in either order. The other two rows stay [0,0,0].</p></div></details>
+<div data-step="interactive"><span class="step-label">05 / Predict, then explore</span><div class="animation" data-animation="order"></div><div class="try-this"><b>TRY THIS</b>Play to the prediction pause. Reverse the frame order. Identify one changing property and two unchanged properties.</div></div>
+<div data-step="questions"><span class="step-label">06 / Check your understanding</span><div class="question-grid">
+<form class="check" id="q1" data-kind="number" data-answer="0.3333333333" data-tolerance="0.005" data-hint="Add the three values in the first centre-row column, then divide by the number of frames."><span class="qnum">1.1 / CALCULATE</span><h3>Average the centre rows [1,0,0], [0,1,0], [0,0,1]. What is the first cell of the mean row? A fraction is fine.</h3><div class="answer-row"><input type="text" name="answer" aria-label="First cell of the mean row" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>(1 + 0 + 0) / 3 = ⅓ ≈ 0.333. Reversing the frame order cannot change this average.</div></details></form>
+<form class="check" id="q2" data-kind="choice" data-answer="mean" data-hint="Which operation gives the same result after every permutation?"><span class="qnum">1.2 / REASON</span><h3>Which representation necessarily loses the distinction between our two directions?</h3><fieldset class="options"><legend>Choose a representation</legend><label><input type="radio" name="answer" value="ordered">All frames, in order</label><label><input type="radio" name="answer" value="mean">The time-averaged image</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>The time-averaged image is identical. Ordered frames preserve the trajectory, even if a model might fail to use it.</div></details></form>
+<form class="check" id="q3" data-kind="choice" data-answer="yes" data-hint="Flattening an ordered window preserves where each input appeared."><span class="qnum">1.3 / CHALLENGE THE CLAIM</span><h3>“Only RNNs can learn order.” Could an MLP on a fixed, ordered window distinguish [1,0] from [0,1]?</h3><fieldset class="options"><legend>Can an ordered-window MLP distinguish them?</legend><label><input type="radio" name="answer" value="yes">Yes</label><label><input type="radio" name="answer" value="no">No</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>Yes. The positions are different inputs to the MLP. Recurrence provides parameter sharing and a way to process varying sequence lengths; it is not the only way to use order.</div></details></form>
+</div></div></section>
+
+<section id="tasks" class="lab" data-section="tasks"><div class="section-heading"><span class="section-number">02</span><div><div class="eyebrow">Sequential data intuition / 12 minutes</div><h2>What is an input?<br>What is the question?</h2></div></div>
+<div class="lesson-hook" data-step="hook"><span class="step-label">01 / The hook</span><p>You have read “not very good”. Are you predicting a review label, a word's role, or the word that comes next?</p><div class="hook-pair"><div class="hook-card"><small>ONE STREAM</small><b>not → very → good</b></div><div class="hook-card"><small>THREE POSSIBLE QUESTIONS</small><b>Sentiment? Tags? Next token?</b></div></div></div>
+<figure class="problem-visual" data-step="problem"><span class="step-label">02 / See the problem</span><div class="problem-flow"><div><b>Sequence → one label</b><span>Read the whole review, then classify it.</span></div><div><b>Sequence → aligned labels</b><span>Tag each token at its position.</span></div><div><b>Prefix → next token</b><span>Predict what has not arrived yet.</span></div></div><figcaption>The observations may be the same. The target positions and the information available at prediction time are different.</figcaption></figure>
+<div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / The idea &amp; an analogy</span><p>Before selecting a model, specify the <b>unit of input</b>, the <b>target</b>, and the <b>moment of prediction</b>. A sentence classifier can wait for the last word. A live next-word predictor must operate on a prefix. A tagger produces one label per token; whether it may look ahead depends on the intended use.</p><div class="analogy"><p><b>Think of a commentator and a reviewer.</b> A commentator must describe the match with only the events seen so far. A reviewer can wait until the match ends. Both see sequences, but they have different information budgets.</p></div><p>A token must become numbers. Here, the tiny vocabulary [not, very, good] becomes three one-hot vectors. “not” is [1,0,0]. The 1 marks an identity; it does not say the word is larger or more positive. Real systems often replace these sparse vectors with learned embeddings.</p></div>
+<div class="formula-card" data-step="formula"><span class="step-label">04 / The formula</span><div class="equation">sequence label: ŷ = g(h<sub>T</sub>)<br>aligned output: ŷ<sub>t</sub> = g(h<sub>t</sub>)<br>next token: p(x<sub>t+1</sub> | x₁, …, x<sub>t</sub>)</div><p class="notation"><b>hₜ</b>: a summary of the prefix, introduced next · <b>g</b>: the output/readout function · <b>ŷ</b>: a prediction · a causal prediction at t has access to x₁…xₜ, not later inputs.</p></div>
+<details class="theory-fold"><summary>Go deeper <small>Shapes, masks, shifted targets and leakage</small></summary><div class="fold-body"><h3>Separate time, features and examples</h3><p>One sequence has T vectors, each of dimension d. With batch size B, a common tensor layout is B × T × d. Some libraries use T × B × d. Neither T nor d is the batch size. In the animation, T = 3 and d = 3; that equality is accidental.</p><div class="math-scroll"><table class="math-table"><thead><tr><th>Step</th><th>Input token</th><th>One-hot input</th><th>Next-token target</th></tr></thead><tbody><tr><td>1</td><td>not</td><td class="number">[1, 0, 0]</td><td>very</td></tr><tr><td>2</td><td>very</td><td class="number">[0, 1, 0]</td><td>good</td></tr><tr><td>3</td><td>good</td><td class="number">[0, 0, 1]</td><td>EOS</td></tr></tbody></table></div><p>EOS is a special end-of-sequence target. It adds an output category to this tiny next-token example. The input vocabulary here still contains only our three displayed words; a full language model usually includes special tokens in its vocabulary too.</p><h3>Padding is storage, not evidence</h3><p>To batch unequal lengths, we may pad short sequences. Mask padded targets out of the loss and use each sequence's last <em>valid</em> state for a final classification. Masking the loss alone does not stop an RNN from updating its hidden state on padding; use lengths, packed sequences or an explicit state-update mask when needed.</p><h3>The future can leak through preparation</h3><p>For forecasting, split according to the intended time horizon and source groups. Fit preprocessing on the training portion. Avoid overlapping train/test windows that expose the same future observations. A bidirectional model can use later context for offline tagging, but cannot use unavailable future words for a live causal prediction.</p><p>During next-token training, the true prefix is usually supplied. During generation, a model's previous generated token often becomes its next input. Mistakes can then affect later inputs. We will return to that difference in a later lesson.</p></div></details>
+<div data-step="interactive"><span class="step-label">05 / Predict, then explore</span><div class="animation" data-animation="tasks"></div><div class="try-this"><b>TRY THIS</b>Switch between “Review label”, “Token tags”, and “Next token”. Point to the first target and say which inputs are available when it is predicted.</div></div>
+<div data-step="questions"><span class="step-label">06 / Check your understanding</span><div class="question-grid">
+<form class="check" id="q4" data-kind="number" data-answer="3" data-tolerance="0" data-hint="A one-hot vector has one coordinate for each vocabulary item."><span class="qnum">2.1 / ENCODE</span><h3>Our input vocabulary is [not, very, good]. How many coordinates does each one-hot input vector have?</h3><div class="answer-row"><input type="text" name="answer" aria-label="One-hot vector dimension" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>3 coordinates. This is d, the input feature dimension. The number of tokens in another sentence can change without changing this vocabulary dimension.</div></details></form>
+<form class="check" id="q5" data-kind="choice" data-answer="good" data-hint="The target is the token immediately after the last input already read."><span class="qnum">2.2 / ALIGN</span><h3>For next-token training on “not very good”, the model has just read “very”. What is its target?</h3><fieldset class="options"><legend>Next-token target</legend><label><input type="radio" name="answer" value="very">very</label><label><input type="radio" name="answer" value="good">good</label><label><input type="radio" name="answer" value="negative">negative</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>The target is “good”. Predicting “very” from an input that already includes “very” is a different and potentially trivial alignment. “negative” belongs to the review-label task.</div></details></form>
+<form class="check" id="q6" data-kind="choice" data-answer="no" data-hint="Ask whether that measurement exists at the intended moment of prediction."><span class="qnum">2.3 / AUDIT</span><h3>At noon, a live forecast predicts the 1 pm temperature. May the input include the actual 1 pm measurement?</h3><fieldset class="options"><legend>Is this input valid?</legend><label><input type="radio" name="answer" value="yes">Yes</label><label><input type="radio" name="answer" value="no">No</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>No. That observation is unavailable at noon. Using it would leak future information and make the evaluation unlike real use.</div></details></form>
+</div></div></section>
+
+<section id="state" class="lab" data-section="state"><div class="section-heading"><span class="section-number">03</span><div><div class="eyebrow">The recurrent idea / 16 minutes</div><h2>Carry a summary.<br>Update it as you read.</h2></div></div>
+<div class="lesson-hook" data-step="hook"><span class="step-label">01 / The hook</span><p>The current input is identical. Why should the answers be different?</p><div class="hook-pair"><div class="hook-card"><small>HISTORY A</small><b>“Remember <mark>7</mark>. … The code is ___.”</b></div><div class="hook-card"><small>HISTORY B</small><b>“Remember <mark>9</mark>. … The code is ___.”</b></div></div></div>
+<figure class="problem-visual" data-step="problem"><span class="step-label">02 / See the problem</span><div class="problem-flow"><div><b>Current input only</b><span>The ending is identical → no way to distinguish the histories.</span></div><span aria-hidden="true">→</span><div><b>Current input + stored context</b><span>The earlier code can influence the current answer.</span></div></div><figcaption>A model with no access to earlier evidence cannot use it. We need a route from past observations to the current computation.</figcaption></figure>
+<div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / The idea &amp; an analogy</span><p>A <b>recurrent neural network (RNN)</b> maintains a hidden state, hₜ. At each step, it reads xₜ, combines it with hₜ₋₁, and produces a new state. A readout can turn that state into a prediction. “Hidden” means an internal representation—not a secret answer and not a separately labelled memory slot.</p><div class="analogy"><p><b>Think of a small running notebook.</b> You read a new line, consult the note you already have, then rewrite your summary. The notebook has limited space. In a trained RNN, learning determines what the update should retain; no one assigns every hidden coordinate a meaning by hand.</p></div><p>The <b>state</b> changes while reading a sequence. The <b>weights</b> specify the update rule and are reused at every step. Training changes those weights across optimization steps. Processing a new token is not itself a weight update.</p></div>
+<div class="formula-card" data-step="formula"><span class="step-label">04 / The formula</span><div class="equation">h<sub>t</sub> = tanh(W<sub>x</sub>x<sub>t</sub> + W<sub>h</sub>h<sub>t−1</sub> + b<sub>h</sub>)<br>z<sub>t</sub><sup>out</sup> = W<sub>y</sub>h<sub>t</sub> + b<sub>y</sub></div><p class="notation">Column vectors: xₜ ∈ ℝᵈ, hₜ ∈ ℝᴴ. Wₓ: H × d; Wₕ: H × H; Wᵧ: C × H. Biases have H and C entries. tanh acts elementwise. For classification, softmax turns the C output logits into probabilities. We set h₀ = 0.</p></div>
+<details class="theory-fold"><summary>Go deeper <small>One complete matrix update, tanh and state boundaries</small></summary><div class="fold-body"><h3>Read the numbers, not just the colours</h3><p>Take d = 3, H = 2, xₜ = [1,0,0]ᵀ, hₜ₋₁ = [0.2,−0.1]ᵀ and zero bias. These chosen weights illustrate a calculation; they are not a trained language model.</p><div class="matrix-row"><table class="matrix"><caption>Wₓ · 2 × 3</caption><tbody><tr><td>1</td><td>0</td><td>−1</td></tr><tr><td>0</td><td>1</td><td>1</td></tr></tbody></table><table class="matrix"><caption>Wₕ · 2 × 2</caption><tbody><tr><td>0.5</td><td>0</td></tr><tr><td>0</td><td>0.5</td></tr></tbody></table></div><p>Wₓxₜ = [1,0]ᵀ; Wₕhₜ₋₁ = [0.1,−0.05]ᵀ. Adding gives [1.1,−0.05]ᵀ. Applying tanh gives hₜ ≈ [0.8005,−0.0500]ᵀ. We use column vectors consistently; some textbooks transpose the same convention.</p><h3>Why an activation?</h3><p>tanh(z) = (eᶻ − e⁻ᶻ)/(eᶻ + e⁻ᶻ) maps real numbers into (−1,1). It introduces nonlinearity. Its derivative is 1 − tanh²(z), which is close to 1 near zero and small in saturated regions near ±1. Bounded states do not imply bounded parameter gradients.</p><h3>Where does a new sequence begin?</h3><p>Reset the state for independent examples. Carrying it between unrelated people, documents or shuffled windows can mix contexts. In stateful streaming, carry state deliberately across truly adjacent chunks. Resetting state, cutting gradient history, and updating weights are three different actions.</p><p>An RNN is first-order in its hidden state, but that state can depend on many earlier inputs. It is not restricted to using only the previous raw input. Finite state width, optimization and the data determine what information it actually keeps.</p></div></details>
+<div data-step="interactive"><span class="step-label">05 / Predict, then explore</span><div class="animation" data-animation="state"></div><div class="try-this"><b>TRY THIS</b>Set linear mode and w = 0.5. Trace [1,0,1] by hand. Then set w = 0: which connection have you removed? Restore tanh and compare the three states.</div></div>
+<div data-step="questions"><span class="step-label">06 / Check your understanding</span><div class="question-grid">
+<form class="check" id="q7" data-kind="number" data-answer="0.5" data-tolerance="0.001" data-hint="Use the stated linear rule: h₂ = x₂ + 0.5h₁."><span class="qnum">3.1 / CALCULATE</span><h3>For the linear toy hₜ = xₜ + 0.5hₜ₋₁, h₀ = 0 and inputs [1,0,1], what is h₂?</h3><div class="answer-row"><input type="text" name="answer" aria-label="Second hidden state in the linear example" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>h₁ = 1 + 0.5 × 0 = 1. h₂ = 0 + 0.5 × 1 = 0.5. A zero input does not erase an existing state. Next, h₃ = 1 + 0.5 × 0.5 = 1.25.</div></details></form>
+<form class="check" id="q8" data-kind="choice" data-answer="state" data-hint="Reading a token is a forward evaluation of the existing learned rule."><span class="qnum">3.2 / DISTINGUISH</span><h3>During an ordinary inference pass, which can change from one time step to the next?</h3><fieldset class="options"><legend>Choose what changes at inference</legend><label><input type="radio" name="answer" value="state">The hidden state</label><label><input type="radio" name="answer" value="weights">The shared weights are retrained</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>The hidden state changes. The weights are reused; they change when we perform training updates, not just because a new input arrives.</div></details></form>
+<form class="check" id="q9" data-kind="number" data-answer="0.761594" data-tolerance="0.005" data-hint="Compute tanh(1 + 0.5 × 0); the animation's first revealed state can help."><span class="qnum">3.3 / ADD THE NONLINEARITY</span><h3>Using tanh, h₀ = 0, x₁ = 1, input weight 1, recurrent weight 0.5 and bias 0, what is h₁ to three decimals?</h3><div class="answer-row"><input type="text" name="answer" aria-label="First tanh hidden state" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>h₁ = tanh(1) ≈ 0.762. The next states are about 0.363 and 0.828. Keep unrounded intermediate values when calculating.</div></details></form>
+</div></div></section>
+
+<section id="unroll" class="lab" data-section="unroll"><div class="section-heading"><span class="section-number">04</span><div><div class="eyebrow">RNN unrolling / 18 minutes</div><h2>Draw the time.<br>Keep the same weights.</h2></div></div>
+<div class="lesson-hook" data-step="hook"><span class="step-label">01 / The hook</span><p>If a sentence doubles in length, do we need twice as many networks?</p><div class="hook-pair"><div class="hook-card"><small>SHORT SEQUENCE</small><b>x₁ → x₂ → x₃</b></div><div class="hook-card"><small>LONGER SEQUENCE</small><b>x₁ → x₂ → … → x₆</b></div></div></div>
+<figure class="problem-visual" data-step="problem"><span class="step-label">02 / See the problem</span><div class="problem-flow"><div><b>Compact loop: h → cell → h</b><span>Shows recurrence, but hides the schedule.</span></div><span aria-hidden="true">→</span><div><b>Unrolled: h₀ → h₁ → h₂ → h₃</b><span>Shows each use of the cell and its dependency.</span></div></div><figcaption>Drawing three cell boxes is like drawing three calls to the same function. It does not create three independent parameter sets.</figcaption></figure>
+<div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / The idea &amp; an analogy</span><p><b>Unrolling</b> replaces the loop with a sequence of operations. Compute h₁ from x₁ and h₀, then h₂ from x₂ and h₁, and so on. The time axis makes the computational dependencies visible. You cannot finish this standard recurrent forward pass for hₜ before its predecessor is available.</p><div class="analogy"><p><b>Think of one rubber stamp used on many pages.</b> The stamp is the parameter set. Each impression is a new computation with its own input and state. More pages mean more uses, not more stamps. A stack of RNN layers would introduce a separate vertical depth axis.</p></div><p>Training uses the same graph in reverse. A final error sends credit through earlier states by the chain rule: <b>backpropagation through time (BPTT)</b>. Every occurrence of a shared parameter contributes to the gradient of that one parameter. Backward derivatives are a training calculation; the forward model still sees only its permitted inputs.</p></div>
+<div class="formula-card" data-step="formula"><span class="step-label">04 / The formula</span><div class="equation">h₁ = f<sub>θ</sub>(x₁,h₀), h₂ = f<sub>θ</sub>(x₂,h₁), …<br>P = Hd + H² + H + CH + C<br>∇<sub>θ</sub>L = Σ contributions from shared uses</div><p class="notation"><b>P</b>: trainable parameter count for one simple recurrent layer plus linear output head, including biases; h₀ is fixed · <b>d</b>: input width · <b>H</b>: hidden width · <b>C</b>: output width · T does not appear in P.</p></div>
+<details class="theory-fold"><summary>Go deeper <small>Count every parameter and trace training credit</small></summary><div class="fold-body"><div class="math-scroll"><table class="math-table"><thead><tr><th>Object</th><th>Shape</th><th>d = 3, H = 2, C = 2</th></tr></thead><tbody><tr><td>Input weights Wₓ</td><td>H × d</td><td>6</td></tr><tr><td>Recurrent weights Wₕ</td><td>H × H</td><td>4</td></tr><tr><td>State bias bₕ</td><td>H</td><td>2</td></tr><tr><td>Output weights Wᵧ</td><td>C × H</td><td>4</td></tr><tr><td>Output bias bᵧ</td><td>C</td><td>2</td></tr><tr><td><b>Total</b></td><td></td><td><b>18</b></td></tr></tbody></table></div><h3>Shared weights do not make long sequences free</h3><p>Longer sequences require more cell evaluations. Standard full BPTT stores intermediate activations across the unroll, so training memory also grows with T. In streaming inference, the recurrence can carry only its current state if no earlier states are needed by the task. Exact runtime and storage depend on implementation.</p><h3>One error can teach many earlier uses</h3><p>For a final-only task, L = ℓ(g(hT), y). For aligned outputs, one common objective is L = (1/N)Σₜmₜℓ(g(hₜ),yₜ), where mₜ is 1 for a valid labelled step and 0 for padding, and N = Σₜmₜ. In either case, differentiate through every connected state dependency. Summing parameter-use contributions is required by weight sharing; whether the loss is a sum or mean is a separate scaling choice.</p><p>For a scalar illustration, h₁ = wx₁, h₂ = wh₁ and L = h₂, so L = w²x₁. Its derivative is 2wx₁: one contribution from each use of w. Do not update the “first w” and “second w” as different parameters.</p><h3>Three different meanings of “more”</h3><p>Increasing <b>T</b> adds time steps. Increasing <b>H</b> widens the state and changes the parameter count. Adding <b>layers</b> stacks distinct recurrent transformations. Unrolling alone changes neither H nor the number of layers.</p></div></details>
+<div data-step="interactive"><span class="step-label">05 / Predict, then explore</span><div class="animation" data-animation="unroll"></div><div class="try-this"><b>TRY THIS</b>Set H = 2 and double T from 4 to 8. Then keep T fixed and set H = 4. Explain why the two experiments change different things.</div></div>
+<div data-step="questions"><span class="step-label">06 / Check your understanding</span><div class="question-grid">
+<form class="check" id="q10" data-kind="number" data-answer="18" data-tolerance="0" data-hint="Count Hd, H², H, CH and C once each."><span class="qnum">4.1 / COUNT</span><h3>For d = 3, H = 2 and C = 2, how many parameters are in the recurrent layer plus output head, including biases?</h3><div class="answer-row"><input type="text" name="answer" aria-label="RNN parameter count" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>2×3 + 2×2 + 2 + 2×2 + 2 = 18. The recurrent matrix is counted once because it is shared.</div></details></form>
+<form class="check" id="q11" data-kind="number" data-answer="18" data-tolerance="0" data-hint="T counts applications of the same cell. It is not in the parameter formula."><span class="qnum">4.2 / CHANGE LENGTH</span><h3>The same model now reads T = 100 steps instead of T = 4. How many trainable parameters does it have?</h3><div class="answer-row"><input type="text" name="answer" aria-label="Parameter count for 100 time steps" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>Still 18. There are now 100 cell evaluations; compute and usual full-BPTT activation storage grow with the unroll.</div></details></form>
+<form class="check" id="q12" data-kind="choice" data-answer="sum" data-hint="Every copy in the drawing refers to the same stored weight."><span class="qnum">4.3 / FOLLOW CREDIT</span><h3>Two time steps contribute gradients 0.2 and 0.3 to the same weight, with the loss scaling already included. What gradient updates that weight?</h3><fieldset class="options"><legend>Shared weight gradient</legend><label><input type="radio" name="answer" value="last">0.3: keep the last</label><label><input type="radio" name="answer" value="sum">0.5: add contributions</label><label><input type="radio" name="answer" value="product">0.06: multiply contributions</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>Add them: 0.2 + 0.3 = 0.5. Along a single dependency path, the chain rule multiplies local derivatives. At shared-parameter uses, the resulting contributions add. Both operations occur in BPTT.</div></details></form>
+</div></div></section>
+
+<section id="dependencies" class="lab" data-section="dependencies"><div class="section-heading"><span class="section-number">05</span><div><div class="eyebrow">Long-term dependencies / 17 minutes</div><h2>A path to the past<br>is not a promise of memory.</h2></div></div>
+<div class="lesson-hook" data-step="hook"><span class="step-label">01 / The hook</span><p>“The <em>key</em> to the cabinets near the windows … <em>is</em> missing.” How far back must the model look to choose “is”?</p><div class="hook-pair"><div class="hook-card"><small>RELEVANT CLUE</small><b>The <mark>key</mark> … <mark>is</mark> missing.</b></div><div class="hook-card"><small>NEARBY DISTRACTOR</small><b>… cabinets … windows …</b></div></div></div>
+<figure class="problem-visual" data-step="problem"><span class="step-label">02 / See the problem</span><div class="problem-flow"><div><b>Early clue</b><span>“key” determines singular agreement.</span></div><span aria-hidden="true">→ · · · →</span><div><b>Many intervening updates</b><span>Each transforms the carried state.</span></div><span aria-hidden="true">→</span><div><b>Late decision</b><span>The useful clue must still matter here.</span></div></div><figcaption>A dependency is long when the relevant evidence and the decision are separated by many processing steps. There is no universal token count at which all RNNs forget.</figcaption></figure>
+<div class="lesson-explanation" data-step="explanation"><span class="step-label">03 / The idea &amp; an analogy</span><p>An RNN has a computational route from early inputs to later states. But information may be overwritten or transformed along that route. During training, the error signal also has to cross many transformations to teach earlier computations what to retain.</p><div class="analogy"><p><b>Think of a message relayed across a room.</b> The forward message is what gets carried. The backward message is a correction explaining how an earlier relay should change. The two messages travel in opposite directions and answer different questions.</p></div><p>The backward sensitivity is a <b>product of local derivatives</b>. Repeated contraction can make a distant influence tiny: a vanishing gradient. Repeated expansion can make it huge: an exploding gradient. For a real vector state, these factors are matrices whose directions and activation derivatives matter. Our scalar experiments isolate the multiplication.</p></div>
+<div class="formula-card" data-step="formula"><span class="step-label">04 / The formula</span><div class="equation">J<sub>t</sub> = ∂h<sub>t</sub>/∂h<sub>t−1</sub><br>∂h<sub>L</sub>/∂h₀ = J<sub>L</sub>J<sub>L−1</sub>…J₁<br>linear scalar: w<sup>L</sup><br>tanh scalar: J<sub>t</sub> = w(1 − h<sub>t</sub>²)</div><p class="notation"><b>L</b>: number of recurrent links in this isolated experiment (we use ℒ or the word “loss” when needed to avoid confusing the two) · xₜ = 0 · input values and weights held fixed · the loss gradient would multiply this sensitivity by a derivative from the readout/loss.</p></div>
+<details class="theory-fold"><summary>Go deeper <small>Derivatives, saturation and what the toy does not prove</small></summary><div class="fold-body"><h3>A complete scalar path</h3><p>Let hₜ = whₜ₋₁, h₀ = 1 and all inputs be zero. Then hL = wᴸh₀ and ∂hL/∂h₀ = wᴸ. At w = 0.8 and L = 20, that sensitivity is 0.011529…, about 1.15% of the unit seed. At w = 1.2, it is 38.3376…. These are sensitivities, not probabilities or accuracies.</p><h3>Why looking at w alone is insufficient</h3><p>For hₜ = tanh(whₜ₋₁), the local derivative includes 1 − hₜ². At saturated states, that term is small. Even w greater than 1 can produce a shrinking product. In a vector RNN, Jₜ = diag(1 − hₜ²)Wₕ. The norm of a product is bounded by the product of norms, but that bound need not be tight. A single weight magnitude or eigenvalue is not a universal diagnosis.</p><h3>Do not merge three different quantities</h3><p><b>State magnitude</b> describes the forward representation. <b>State sensitivity</b> describes how a perturbation influences a later state. <b>Parameter gradient</b> sums loss-dependent contributions from parameter uses. Our plot isolates state sensitivity. A small state is not proof of lost information; a finite-precision or noisy system can nevertheless struggle to use a very weak signal.</p></div></details>
+<div data-step="interactive"><span class="step-label">05 / Predict, then explore</span><div class="animation" data-animation="memory"></div><div class="animation" data-animation="gradient"></div><div class="try-this"><b>TRY THIS</b>Compare “Decay”, “Growth”, and “Saturation”. The two experiments share gap, weight and activation settings. Explain a case where the state remains noticeable but the backward sensitivity becomes tiny.</div></div>
+<details class="theory-fold"><summary>What helps—and what does each remedy leave unresolved? <small>The bridge to the next lecture</small></summary><div class="fold-body"><div class="math-scroll"><table class="math-table"><thead><tr><th>Idea</th><th>What it changes</th><th>Keep in mind</th></tr></thead><tbody><tr><td>Gradient clipping</td><td>Bounds an overly large update signal.</td><td>Does not enlarge a vanished gradient.</td></tr><tr><td>Truncated BPTT</td><td>Limits how far gradients travel during a training chunk.</td><td>Can carry state forward while cutting credit to earlier chunks.</td></tr><tr><td>Gated memory (LSTM/GRU)</td><td>Learns controls for retaining and replacing information.</td><td>Improves available paths, not guaranteed unlimited recall.</td></tr><tr><td>Attention</td><td>Can access relevant states through shorter connections.</td><td>Still needs appropriate positions, masks and computational resources.</td></tr></tbody></table></div><h3>Clipping: a brake, not an amplifier</h3><p>Norm clipping uses g ← g · min(1, τ/‖g‖) for nonzero g and threshold τ &gt; 0. Leave g = 0 unchanged. In our scalar version, clipping 38.338 at τ = 5 gives 5; clipping 0.011529 gives 0.011529.</p><h3>Preview a path that can preserve a derivative</h3><p>An LSTM includes an additive cell update cₜ = fₜ ⊙ cₜ₋₁ + iₜ ⊙ c̃ₜ. Along its direct cell-state connection, holding the gate values fixed, the derivative is fₜ. A forget gate near 1 can preserve that path's signal. The full derivative also includes indirect gate dependencies, and this is not the complete LSTM. Next time we will learn how the gates are computed.</p><p><b>Suspense to carry forward:</b> can a network learn when to keep its notebook unchanged and when to write something new?</p></div></details>
+<div data-step="questions"><span class="step-label">06 / Check your understanding</span><div class="question-grid">
+<form class="check" id="q13" data-kind="number" data-answer="0.011529215" data-tolerance="0.0005" data-hint="Multiply 0.8 by itself twenty times. This is a sensitivity, so do not enter a percentage."><span class="qnum">5.1 / CALCULATE</span><h3>For 20 linear recurrent links with derivative 0.8 each, what fraction of a unit sensitivity reaches the beginning? Give a decimal.</h3><div class="answer-row"><input type="text" name="answer" aria-label="Sensitivity through 20 links" autocomplete="off"><button type="submit">Check</button><span class="feedback" role="status"></span></div><details class="answer"><summary>Show reasoning</summary><div>0.8²⁰ ≈ 0.011529, or about 1.15% of the unit seed. It is not 20 × 0.8. The chain rule multiplies along the path.</div></details></form>
+<form class="check" id="q14" data-kind="choice" data-answer="no" data-hint="Clipping only acts when a gradient exceeds the magnitude limit."><span class="qnum">5.2 / CHOOSE A REMEDY</span><h3>Can clipping a gradient of 0.0115 at threshold 5 restore it to 1?</h3><fieldset class="options"><legend>Does clipping restore a small gradient?</legend><label><input type="radio" name="answer" value="yes">Yes</label><label><input type="radio" name="answer" value="no">No</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>No. It stays 0.0115. Clipping reduces gradients larger than the threshold; it does not amplify smaller ones.</div></details></form>
+<form class="check" id="q15" data-kind="choice" data-answer="saturation" data-hint="The local derivative is w times the derivative of tanh, not w alone."><span class="qnum">5.3 / EXPLAIN THE SURPRISE</span><h3>With tanh and w = 1.3, why can the returning sensitivity still become small?</h3><fieldset class="options"><legend>Why can sensitivity shrink?</legend><label><input type="radio" name="answer" value="impossible">It cannot: w &gt; 1 guarantees explosion</label><label><input type="radio" name="answer" value="saturation">The factors 1 − hₜ² can be small</label></fieldset><button type="submit">Check</button><span class="feedback" role="status"></span><details class="answer"><summary>Show reasoning</summary><div>tanh saturation makes 1 − hₜ² small. Multiplying those factors with w at each step can yield a small total derivative even when w is above 1. The full path matters.</div></details></form>
+</div></div></section>
+
+<section id="exit" class="lab"><div class="section-heading"><span class="section-number">06</span><div><div class="eyebrow">Bring it together / 5 minutes</div><h2>Explain the memory.<br>Then question its limits.</h2></div></div><div class="exit-ticket"><p><b>Your design challenge.</b> A sensor sends one measurement per minute. After observing a variable-length stream, you must report whether an early warning occurred before a later fault. The same two events in the opposite order should produce a different answer.</p><div class="exit-grid"><div><label for="exit-design">1. Specify the input, target, output timing and what the hidden state must retain. Explain why the mean reading may be insufficient.</label><textarea id="exit-design" data-save placeholder="The model needs to retain…"></textarea></div><div><label for="exit-training">2. If performance gets worse as the event gap grows, name two hypotheses and an experiment that could distinguish them.</label><textarea id="exit-training" data-save placeholder="One explanation is… I would test it by…"></textarea></div><div><label for="exit-word">3. Without looking back, which word began the lecture? How is your memory challenge similar to—and different from—the toy RNN?</label><textarea id="exit-word" data-save placeholder="The word was…"></textarea></div></div><details class="answer"><summary>Compare with the discussion guide</summary><div><p>The target depends on event order, so an order-blind mean can merge examples with different labels. Read a measurement or event-feature vector per minute; produce one sequence-level binary label at the last valid step. The state should preserve whether a warning has occurred and whether a qualifying later fault has occurred. Reset between independent streams.</p><p>Possible explanations include lost/overwritten representations, weak training gradients, insufficient examples at long gaps, or a preprocessing/label bug. Evaluate matched examples with varied gaps; inspect gradient norms by time step, check target alignment, and compare a simple explicit event-state baseline. Poor accuracy alone does not identify vanishing gradients.</p><p>The word was <b>ORCHID</b>. Both tasks need a distant clue. Human memory uses many processes, rehearsal and retrieval cues; our scalar recurrence is a controlled mathematical analogy, not a model of human cognition.</p></div></details></div><p class="closing">We now have a past. Next, we need a way to decide what deserves to stay.</p></section>
+<section id="references" class="resources"><h2>Keep exploring.</h2><p>Original diagrams and numerical teaching examples. No downloaded model, external font, or network connection is needed for the worksheet.</p><div class="resource-links"><a class="button" href="assets/gallery.html">Open the six SVG figures ↗</a><a class="button" href="student-handout.html">Student handout ↗</a><a class="button" href="instructor-guide.md">Instructor &amp; answer guide ↗</a><a class="button" href="storyboard-guide.md">Animation narration ↗</a></div><ul><li><a href="https://d2l.ai/chapter_recurrent-neural-networks/rnn.html">Dive into Deep Learning: Recurrent Neural Networks</a> — recurrence, hidden states, output layers and parameter sharing. Our equations use column-vector notation.</li><li><a href="https://d2l.ai/chapter_recurrent-neural-networks/bptt.html">Dive into Deep Learning: Backpropagation Through Time</a> — the unrolled graph and how shared-parameter contributions combine.</li><li><a href="https://proceedings.mlr.press/v28/pascanu13.html">Pascanu, Mikolov &amp; Bengio (2013): On the difficulty of training recurrent neural networks</a> — analysis of vanishing and exploding gradients and gradient clipping.</li></ul><p class="storage-note" id="storage-status">Answers stay in this browser on this device. Use “Save my answers” to keep a text copy. Progress supports practice; it is not a grade.</p></section>
+<footer>Deep Learning · Sequence modelling · Designed for first-time sequence learners.<br><a href="#">Return to the collection</a> · <a href="https://github.com/ashwin-tewary/dl-worksheets">Repository</a></footer>
+</main></div>
+<div id="complete-lecture-notes" class="lecture-notes-section">
+    <div class="notes-header">
+        <span class="eyebrow">LECTURE 14 · COMPLETE STUDY GUIDE & FORMULAS</span>
+        <h2>Sequence Modelling & Vanilla Recurrent Neural Networks</h2>
+        <p>Comprehensive guide covering sequential data representations, recurrent state updates, computational graph unrolling, Backpropagation Through Time (BPTT), and gradient stability.</p>
+    </div>
+
+    <div class="notes-card">
+        <h3>1. Why Standard Feed-Forward Networks Fail on Sequences</h3>
+        <ul>
+            <li><strong>Variable Sequence Length ($T$):</strong> Fixed input vectors $x \in \mathbb{R}^d$ cannot represent variable-length audio or text sentences without arbitrary padding or truncation.</li>
+            <li><strong>Destruction of Word Order:</strong> Flattening or Bag-of-Words loses temporal and syntactic order ("The dog chased the cat" &ne; "The cat chased the dog").</li>
+            <li><strong>No Parameter Sharing Across Time:</strong> Features learned at time step $t_1$ must be re-learned at step $t_{10}$ unless parameters are shared temporally.</li>
+        </ul>
+    </div>
+
+    <div class="notes-card">
+        <h3>2. The Recurrent Neural Network (RNN) Update Equations</h3>
+        <p>At each time step $t = 1, \dots, T$, the recurrent unit receives input $x_t$ and previous hidden state $h_{t-1}$:</p>
+        <div class="notes-formula">
+            Hidden State Update:  h<sub>t</sub> = tanh(W<sub>hh</sub> h<sub>t-1</sub> + W<sub>xh</sub> x<sub>t</sub> + b<sub>h</sub>)<br>
+            Output / Prediction:   y&#770;<sub>t</sub> = softmax(W<sub>hy</sub> h<sub>t</sub> + b<sub>y</sub>)
+        </div>
+        <p><strong>Parameter Sharing:</strong> The weight matrices $\{W_{xh}, W_{hh}, W_{hy}\}$ and bias vectors $\{b_h, b_y\}$ are strictly identical across all time steps.</p>
+    </div>
+
+    <div class="notes-card">
+        <h3>3. Backpropagation Through Time (BPTT) Derivation</h3>
+        <p>Let total loss be $\mathcal{L} = \sum_{t=1}^T \mathcal{L}_t$. The gradient with respect to recurrent weight $W_{hh}$ accumulates across all past steps:</p>
+        <div class="notes-formula">
+            &part;L / &part;W<sub>hh</sub> = &Sigma;<sub>t=1..T</sub> &Sigma;<sub>k=1..t</sub> (&part;L<sub>t</sub> / &part;h<sub>t</sub>) &times; (&prod;<sub>j=k+1..t</sub> &part;h<sub>j</sub> / &part;h<sub>j-1</sub>) &times; (&part;h<sub>k</sub> / &part;W<sub>hh</sub>)
+        </div>
+        <p>Where the temporal Jacobian product is:</p>
+        <div class="notes-formula">
+            &part;h<sub>j</sub> / &part;h<sub>j-1</sub> = diag(1 - h<sub>j</sub><sup>2</sup>) &times; W<sub>hh</sub><sup>T</sup>
+        </div>
+    </div>
+
+    <div class="notes-card">
+        <h3>4. The Vanishing & Exploding Gradient Dilemma</h3>
+        <p>Because the product $\prod_{j=k+1}^t W_{hh}^T$ contains $t-k$ matrix multiplications:</p>
+        <ul>
+            <li><strong>Vanishing Gradients:</strong> When spectral radius $ho(W_{hh}) < 1$ and $|	anh'| \le 1$, gradients decay exponentially towards zero as $t-k 	o \infty$. The network cannot connect long-range dependencies.</li>
+            <li><strong>Exploding Gradients:</strong> When $ho(W_{hh}) > 1$, gradients grow exponentially, causing numerical overflow and parameter destabilization.</li>
+        </ul>
+        <div class="notes-formula">
+            <strong>Solution for Exploding Gradients (Norm Clipping):</strong><br>
+            If ||g|| &gt; &theta;, then g &larr; (&theta; / ||g||) &times; g
+        </div>
+    </div>
+</div>
+
+<script>
+/* Exact, deterministic teaching examples. No trained weights or predictions. */
+(function(root){
+ 'use strict';
+ function trace(inputs,weight=.5,activation='tanh',initial=0){
+  let h=initial;
+  return inputs.map((x,i)=>{const previous=h,z=x+weight*previous;h=activation==='linear'?z:Math.tanh(z);return {t:i+1,x,previous,z,h,derivative:weight*(activation==='linear'?1:1-h*h)};});
+ }
+ function parameters(d,H,C){return H*d+H*H+H+C*H+C;}
+ function memoryChain(length,weight=.8,activation='linear',initial=1){
+  let gradient=1;
+  return [{t:0,h:initial,gradient:1,derivative:1},...trace(Array.from({length},()=>0),weight,activation,initial).map(s=>({...s,gradient:(gradient*=s.derivative)}))];
+ }
+ function clipGradient(value,limit){return Math.sign(value)*Math.min(Math.abs(value),limit);}
+ const api={trace,parameters,memoryChain,clipGradient};
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SequenceModel=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Deterministic teaching player. Motion and dwell share one cancellable clock. */
+(function(root){
+ function createPlayer(steps,render,options={}){
+  const request=options.request||requestAnimationFrame,cancel=options.cancel||cancelAnimationFrame;
+  const reduced=options.reduced||(()=>false),baseTransition=options.transition||1400,hold=options.hold||4600;
+  const state={index:0,progress:1,playing:false,speed:1,checkpoint:false};
+  const motion=()=>steps[state.index].transition||baseTransition;
+  let handle=null,last=null,elapsed=motion(),destroyed=false;
+  const emit=()=>{state.checkpoint=!!steps[state.index].checkpoint&&state.progress===1;render({...state});};
+  function clear(){if(handle!==null)cancel(handle);handle=null;last=null;}
+  function queue(){if(!destroyed&&handle===null)handle=request(tick);}
+  function tick(t){handle=null;if(destroyed)return;if(last===null)last=t;elapsed+=(t-last)*state.speed;last=t;state.progress=Math.min(1,elapsed/motion());
+   if(state.progress===1&&steps[state.index].checkpoint&&state.playing){state.playing=false;}
+   if(state.playing&&elapsed>=motion()+hold){if(state.index===steps.length-1){state.playing=false;}else{state.index++;elapsed=0;state.progress=0;}}
+   emit();if(state.playing||state.progress<1)queue();else last=null;
+  }
+  function set(index,animate){clear();state.playing=false;state.index=Math.max(0,Math.min(steps.length-1,index));state.progress=animate&&!reduced()?0:1;elapsed=state.progress*motion();emit();if(state.progress<1)queue();}
+  const api={state,play(){if(destroyed)return;if(reduced()){set(Math.min(steps.length-1,state.index+1),false);return;}clear();if(state.index===steps.length-1&&state.progress===1){state.index=0;state.progress=1;elapsed=motion();}else if(steps[state.index].checkpoint&&state.progress===1){state.index++;state.progress=0;elapsed=0;}state.playing=true;emit();queue();},
+   pause(){clear();state.playing=false;emit();},next(){set(state.index+1,true);},previous(){set(state.index-1,false);},restart(){set(0,false);},
+   seek(position){clear();state.playing=false;const v=Math.max(0,Math.min(steps.length-1,Number(position)));state.index=Math.ceil(v);state.progress=v===Math.floor(v)?1:v-Math.floor(v);elapsed=state.progress*motion();emit();},
+   speed(value){state.speed=Math.max(.25,Math.min(3,Number(value)));emit();},destroy(){clear();destroyed=true;state.playing=false;}
+  };emit();return api;
+ }
+ if(typeof module!=='undefined'&&module.exports)module.exports={createPlayer};else root.SequenceTimeline={createPlayer};
+})(typeof window!=='undefined'?window:this);
+
+</script>
+<script>
+(function(root){
+ 'use strict';
+ const beat=(title,narration,equation='',checkpoint=false)=>({title,narration,equation,checkpoint});
+ const stories={
+  order:{title:'A film is more than its frames.',subtitle:'Reverse the journey. Keep every pixel. Watch the meaning change.',note:'Synthetic 3 × 3 binary images. The bright pixel is 1; all other pixels are 0. Averaging is an example of an order-blind summary, not a property of all CNNs.',steps:[
+   beat('Meet the frames','One bright dot appears at three different positions. Every cell is numbered so we can track exactly what moves.'),
+   beat('Read the first frame','At t = 1, you see a position. One image alone does not tell you the direction of motion.'),
+   beat('Read in time order','The second frame supplies a change. Order turns positions into a journey. The moving marker traces the temporal connection.'),
+   beat('Predict the reversal','Before revealing the answer: if we reverse all three frames, which properties stay the same? Which one changes?','Same values + different order = ?',true),
+   beat('Reveal the journey','All three images are unchanged, but the direction reverses. Use “Reverse order” to compare the two journeys.'),
+   beat('Lose the order','The time average is identical in both directions. Once an order-blind summary merges the two sequences, a downstream classifier cannot reconstruct their direction from that summary alone.','Mean centre row = [⅓, ⅓, ⅓] in either direction')
+  ]},
+  tasks:{title:'What should come out—and when?',subtitle:'One input stream can support three different prediction tasks.',note:'Tokens and one-hot vectors are hand-written examples. Output labels are supplied teaching targets, not predictions from a trained language model. EOS marks the end of a sequence.',steps:[
+   beat('Name the task','First decide what you need to predict. A sequence label, a tag for each token and the next token require different target alignments.'),
+   beat('Encode one token','A token becomes a vector before it enters the network. Here the vocabulary is [not, very, good]; the first input is [1, 0, 0].','Token IDs name categories; their numerical size is not meaning.'),
+   beat('Keep the prefix honest','A causal model can use only the tokens already read. A faded future token belongs to the example but is not available to this prediction.'),
+   beat('Predict the output positions','Choose a task. Should an output appear at every step, or only after the final word? For next-token training, which token is the target after “very”?','Write down the input → target alignment.',true),
+   beat('Align the targets','A review label follows the final state. Token tags align with their input token. Next-token targets are shifted one place left: very, good, EOS.'),
+   beat('Change the question','Switch the task and compare the output locations. The recurrent state update can stay the same while the readout and training targets change.','Sequence label: ŷ = g(hT) · token outputs: ŷt = g(ht)')
+  ]},
+  state:{title:'Read. Combine. Update.',subtitle:'Inspect the arithmetic inside one recurrent cell before expanding it through time.',note:'A one-dimensional teaching RNN with input weight 1, recurrent weight w, bias 0 and h₀ = 0. The values are chosen, not learned. Tanh is the default; linear mode removes tanh for hand calculation.',steps:[
+   beat('Start with a clean notebook','Before reading anything, set h₀ = 0. This is the initial state, not a trainable weight in our example.'),
+   beat('Bring in the new evidence','Read the current input xₜ. The earlier inputs are represented only through the previous state.'),
+   beat('Combine old and new','Multiply the previous state by w, then add xₜ. This produces the pre-activation zₜ. In a full RNN these multiplications use matrices.','zₜ = xₜ + w hₜ₋₁'),
+   beat('Predict before updating','With linear mode, w = 0.5 and inputs [1, 0, 1], what will h₂ be? Does zero input force the state back to zero?','Use h₁ = 1; calculate h₂ before continuing.',true),
+   beat('Write the first state','Apply the chosen activation. Tanh keeps the state between −1 and 1; linear mode leaves z unchanged. The result is passed to the next step.'),
+   beat('Zero input, nonzero memory','At the second step, x₂ = 0. The recurrent contribution can still be nonzero. Change w to 0 to remove that route from the past.'),
+   beat('Read the third input','The last state depends on both the new input and the state carried forward. A state is a learned summary in a trained network; it is not a literal transcript.','Compare tanh and linear mode in the numeric trace below.')
+  ]},
+  unroll:{title:'One cell. Many uses.',subtitle:'Unfold the loop into a computation you can follow from left to right.',note:'One recurrent layer, column-vector notation, input dimension d = 3 and output dimension C = 2. We count all weights and biases, including the output head; h₀ is fixed. Drawn time steps are not stacked recurrent layers.',steps:[
+   beat('A loop hides the schedule','The compact diagram says “reuse this cell”. Its loop does not show which state existed first.'),
+   beat('Make two uses visible','Unrolling draws two applications of the same function. h₁ feeds h₂. The drawings share parameters, but their state values can differ.'),
+   beat('Extend the time axis','Continue for T inputs. The same parameter bank is connected to every use. Each new step adds computation and a new state.'),
+   beat('Predict the parameter count','With d = 3, H = 2 and C = 2, we have 18 parameters. If T doubles, what happens to this count? What happens to the number of cell evaluations?','Parameters versus computation: make two predictions.',true),
+   beat('Finish the forward pass','A sequence-level loss can be attached to the final readout. Earlier states can influence it through the recurrent arrows.'),
+   beat('Send credit backward','During training, the loss sends derivatives backward through the unrolled graph. This is backpropagation through time. Backward credit is not future information at inference.'),
+   beat('Add into the same bank','Because every time step uses the same parameters, their gradient contributions accumulate into one update. Change T and H to separate time length from hidden width.','P = Hd + H² + H + CH + C')
+  ]},
+  memory:{title:'Carry one clue through the gap.',subtitle:'Keep the first clue fixed. Add neutral steps. Measure its surviving influence.',note:'Controlled scalar experiment: h₀ = +1, all subsequent inputs are 0. Neutral here means zero external input, not that the recurrent update stops. Magnitude is not classification accuracy; a small positive value still has a positive sign.',steps:[
+   beat('Plant the clue','Imagine the first word determines an answer much later. We isolate that clue as a scalar state h₀ = +1.'),
+   beat('Insert a neutral step','No new evidence arrives: x = 0. Nevertheless, the recurrent transformation still changes the state.'),
+   beat('Widen the gap','Every extra step inserts another transformation between the clue and the answer. The state width stays fixed.'),
+   beat('Predict the effect','In linear mode with w = 0.8, is the clue multiplied by 0.8 once or once per link? Predict the size after 20 links.','h₂₀ = 0.8²⁰ × h₀',true),
+   beat('Measure the state','The ending value is a forward quantity. Smaller magnitude can make a signal more fragile, but this display alone does not establish prediction failure.'),
+   beat('Ask the learning question','Remembering a clue during a forward pass and learning to preserve it are connected but different questions. Next, send a unit sensitivity backward through these very same operations.','How much would the final state change if h₀ changed slightly?')
+  ]},
+  gradient:{title:'Can the correction reach the beginning?',subtitle:'Follow a unit sensitivity backward, multiplying one local derivative at a time.',note:'We measure ∂hL/∂h₀ with inputs held fixed and seed ∂hL/∂hL = 1. This is one path of the chain rule, not the complete parameter gradient. The vertical axis is logarithmic so small and large magnitudes remain visible.',steps:[
+   beat('Seed the final sensitivity','Start at the final state with sensitivity 1. A loss would supply an additional derivative; here we isolate the recurrent path.'),
+   beat('Cross one link backward','Multiply by the derivative of the last recurrent update. For a linear cell this is w. For tanh it is w(1 − hₜ²).','Jₜ = ∂hₜ/∂hₜ₋₁'),
+   beat('Cross several links','The chain rule multiplies these local derivatives. Repeated factors below one shrink the result; repeated factors above one can grow it.'),
+   beat('Predict before the reveal','With 20 linear links, compare w = 0.8 and w = 1.2. Will doubling a clipping threshold bring back a vanished signal?','g₀ = J₁ J₂ … JL × 1',true),
+   beat('Read the returning signal','Try the Decay and Growth presets. Keep the displayed magnitude separate from model accuracy. The identity line at 1 is a reference, not a pass/fail threshold.'),
+   beat('Test the tanh surprise','Try Saturation: w = 1.3 with tanh. The state can stay appreciable while the gradient becomes small. A weight above 1 alone does not prove explosion.','The derivative depends on both the weight and the activation.'),
+   beat('Match the remedy to the problem','Clipping caps a large gradient without enlarging a small one. Truncation limits the training path. Gated memory creates paths that can preserve derivatives; it does not guarantee perfect recall.')
+  ]}
+ };
+ stories.memory.steps[4].transition=6000;
+ stories.gradient.steps[4].transition=6000;
+ if(typeof module!=='undefined'&&module.exports)module.exports=stories;else root.SequenceStories=stories;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Original, portable SVG teaching diagrams. Every numerical cell is text. */
+(function(root){
+ 'use strict';
+ const M=typeof module!=='undefined'&&module.exports?require('./model.js'):root.SequenceModel;
+ const C={ink:'#183c35',teal:'#12655b',mint:'#dceadd',paper:'#fffefa',line:'#cbd7ca',muted:'#586c62',coral:'#b24a30',sand:'#f4e5d0',gold:'#e2b457'};
+ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+ const f=n=>(Math.abs(n)<.001&&n!==0)||Math.abs(n)>=10000?n.toExponential(2):Number(n.toFixed(3)).toString();
+ const text=(x,y,s,size=19,fill=C.ink,anchor='start',extra='')=>`<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}" ${extra}>${esc(s)}</text>`;
+ const box=(x,y,w,h,fill=C.paper,stroke=C.line,extra='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="${fill}" stroke="${stroke}" ${extra}/>`;
+ function arrow(x1,y1,x2,y2,color=C.teal,p=1){return `<path d="M${x1} ${y1} L${x2} ${y2}" fill="none" stroke="${color}" stroke-width="2.5" marker-end="url(#${color===C.coral?'a-coral':'a-teal'})"/>`+(p>0&&p<1?`<circle cx="${x1+(x2-x1)*p}" cy="${y1+(y2-y1)*p}" r="7" fill="${C.gold}" stroke="${C.ink}"/>`:'');}
+ function wrap(title,body){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 440" role="img" aria-label="${esc(title)}"><title>${esc(title)}</title><defs><marker id="a-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="${C.teal}"/></marker><marker id="a-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="${C.coral}"/></marker></defs><style>text{font-family:system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums}.number{font-family:ui-monospace,monospace}</style><rect width="920" height="440" rx="14" fill="${C.paper}"/>${text(30,36,title,17,C.muted)}${body}</svg>`;}
+ function matrix(x,y,values,cell=40){let out='';values.forEach((row,r)=>row.forEach((value,c)=>{const on=value!==0;out+=`<rect x="${x+c*cell}" y="${y+r*cell}" width="${cell}" height="${cell}" rx="3" fill="${on?C.teal:'#f0f1e8'}" stroke="${C.paper}" stroke-width="2"/>`+text(x+(c+.5)*cell,y+(r+.5)*cell+7,value,21,on?'#fffefa':C.muted,'middle','class="number"');}));return out;}
+ function order(beat,p,o){let out='';const reversed=!!o.reverse;
+  for(let t=0;t<3;t++){
+   const x=78+t*278,pos=reversed?2-t:t,active=beat>=4||t<=Math.max(0,beat-1);
+   out+=box(x-18,78,196,231,active?C.mint:'#f5f3ec')+text(x,110,`t = ${t+1}`,18,C.teal)+matrix(x+14,127,[[0,0,0],Array.from({length:3},(_,i)=>i===pos?1:0),[0,0,0]],44)+text(x+80,286,`column ${pos+1}`,16,C.muted,'middle');
+   if(t<2)out+=arrow(x+182,194,x+250,194,C.teal,beat===t+2?p:1);
+  }
+  out+=box(30,334,860,78,beat>=4?C.mint:C.sand)+text(50,365,beat>=4?`Journey: ${reversed?'RIGHT → LEFT':'LEFT → RIGHT'}`:'Predict: what changes when time runs backward?',22,C.teal);
+  out+=text(50,394,beat>=5?'Time-averaged centre row: [0.333, 0.333, 0.333] · identical after reversal':'Three frames · same pixels · one ordered sequence',17,C.muted);
+  return wrap('ORDER / time runs from left to right',out);
+ }
+ function tasks(beat,p,o){const mode=o.task||'classification',words=['not','very','good'];let out='';
+  const target=mode==='next'?['very','good','EOS']:mode==='tagging'?['ADV','ADV','ADJ']:['','','negative'];
+  for(let t=0;t<3;t++){
+   const x=83+t*282,read=beat>=4||t<Math.min(2,Math.max(1,beat)),fill=read?C.mint:'#eeeee8';
+   out+=box(x,76,184,75,fill)+text(x+92,105,words[t],25,read?C.ink:C.muted,'middle')+text(x+92,135,`x${t+1} = [${[0,1,2].map(j=>j===t?1:0).join(', ')}]`,16,C.muted,'middle');
+   out+=arrow(x+92,153,x+92,192)+box(x,201,184,64,fill)+text(x+92,240,`state h${t+1}`,22,C.teal,'middle');
+   if(t<2)out+=arrow(x+189,233,x+268,233,C.teal,beat===2?p:1);
+   if(target[t]&&beat>=4)out+=arrow(x+92,270,x+92,309)+box(x,318,184,52,C.sand)+text(x+92,350,target[t],22,C.coral,'middle');
+   else if(beat<4)out+=text(x+92,348,read?'read so far':'future input',17,C.muted,'middle');
+  }
+  out+=text(460,412,mode==='classification'?'ONE target after the final input':mode==='next'?(beat<4?'Causal prefix: future inputs remain unavailable.':'NEXT-TOKEN targets: x₂, x₃, EOS · shifted relative to inputs'):'ALIGNED tags: one target for each input token',19,C.ink,'middle');
+  return wrap('TARGETS / choose the question before choosing the output',out);
+ }
+ function state(beat,p,o){const w=Number(o.weight??.5),activation=o.activation||'tanh';const t=beat>=6?2:beat>=5?1:0;const trace=M.trace([1,0,1],w,activation),s=trace[t];let out='';
+  out+=text(35,79,`Step ${t+1} of 3 · inputs [1, 0, 1] · h₀ = 0`,18,C.muted);
+  out+=box(35,109,190,85,C.mint)+text(55,140,'NEW INPUT',14,C.teal)+text(130,175,`x${t+1} = ${s.x}`,27,C.ink,'middle');
+  out+=box(35,231,190,91,C.sand)+text(55,261,'PREVIOUS STATE',14,C.coral)+text(130,302,`h${t} = ${f(s.previous)}`,24,C.ink,'middle');
+  out+=arrow(233,151,340,182,C.teal,beat===1?p:1)+arrow(233,276,340,233,C.coral,beat===2?p:1)+text(263,293,`× ${f(w)}`,18,C.coral);
+  out+=box(350,159,191,108,beat>=2?C.mint:C.paper)+text(445,193,'ADD',14,C.teal,'middle')+text(445,237,beat>=2?`z = ${f(s.z)}`:'x + wh',25,C.ink,'middle');
+  out+=arrow(551,213,606,213,C.teal,beat===4?p:1)+box(618,165,113,96,C.sand)+text(674,220,activation==='tanh'?'tanh':'linear',23,C.ink,'middle')+arrow(741,213,787,213);
+  out+=box(797,166,95,96,beat>=4?C.mint:C.paper)+text(844,197,`h${t+1}`,18,C.teal,'middle')+text(844,237,beat>=4?f(s.h):'?',22,C.ink,'middle');
+  out+=box(35,351,857,65,C.mint)+text(55,392,beat>=4?`h${t+1} = ${activation==='tanh'?'tanh(':''}${s.x} + ${f(w)} × ${f(s.previous)}${activation==='tanh'?')':''} = ${f(s.h)}`:'Predict the next state before revealing it.',24,C.teal);
+  return wrap('STATE / one update combines current evidence with carried context',out);
+ }
+ function unroll(beat,p,o){const T=Number(o.length??4),H=Number(o.hidden??2),count=M.parameters(3,H,2);let out='';
+  if(beat===0){out+=box(343,152,234,121,C.mint)+text(460,205,'one RNN cell',27,C.teal,'middle')+text(460,244,'shared parameters θ',18,C.teal,'middle');out+=arrow(180,213,330,213)+text(203,193,'xₜ',23);out+=arrow(590,213,730,213)+text(685,193,'hₜ',23);out+=`<path d="M525 151V95H396V150" fill="none" stroke="${C.teal}" stroke-width="3" marker-end="url(#a-teal)"/>`+text(460,78,'previous state returns',18,C.muted,'middle')+text(460,354,'Unroll to reveal the time order →',24,C.ink,'middle');return wrap('UNROLLING / same function, different moments',out);}
+  const shown=beat===1?2:T,step=820/T,width=Math.min(126,step-32);
+  out+=box(36,60,848,51,C.sand)+text(460,93,`ONE shared parameter bank θ · ${count} parameters · H = ${H}`,21,C.teal,'middle');
+  for(let i=0;i<shown;i++){
+   const x=48+i*step,mid=x+width/2;
+   out+=text(mid,151,`x${i+1}`,20,C.ink,'middle')+arrow(mid,161,mid,190)+box(x,198,width,70,C.mint)+text(mid,225,'same θ',16,C.teal,'middle')+text(mid,252,`h${i+1}`,23,C.ink,'middle');
+   if(i<shown-1){out+=beat>=5?arrow(x+step-9,235,x+width+7,235,C.coral,p):arrow(x+width+7,235,x+step-9,235,C.teal,p);}
+   out+=`<line x1="${x+width-10}" y1="113" x2="${x+width-10}" y2="196" stroke="${C.muted}" stroke-dasharray="3 4"/>`;
+   if(i===shown-1&&beat>=4)out+=(beat>=5?arrow(mid,315,mid,276,C.coral,p):arrow(mid,276,mid,315))+text(mid,340,'readout',16,C.teal,'middle')+text(mid,369,'loss L',19,C.coral,'middle');
+  }
+  out+=text(40,402,beat>=6?'All time-step gradient contributions accumulate into θ.':beat>=5?'BACKWARD: training credit follows the recurrent connections.':`FORWARD: ${T} inputs → ${T} cell evaluations · ${count} parameters`,21,beat>=5?C.coral:C.teal);
+  return wrap('TIME / horizontal position is a time step, not a new layer',out);
+ }
+ function memory(beat,p,o){const L=Number(o.gap??20),w=Number(o.weight??.8),activation=o.activation||'linear';const path=M.memoryChain(L,w,activation),shown=beat>4?L:beat===4?Math.min(L,Math.floor(Math.min(L,4)+(L-Math.min(L,4))*p)):beat===3?Math.min(L,4):beat===2?Math.min(L,3):beat===1?1:0;let out='';
+  out+=box(33,88,153,129,C.mint)+text(108,118,'FIRST CLUE',15,C.teal,'middle')+text(108,163,'+1',37,C.teal,'middle')+text(108,197,'h₀',21,C.ink,'middle');
+  const cols=Math.min(L,10),space=478/cols;
+  for(let i=0;i<cols;i++){const x=235+i*space,active=(i+1)/cols<=shown/L;out+=box(x,128,Math.min(38,space-4),42,active?C.mint:'#f0f0e9')+text(x+Math.min(38,space-4)/2,156,'0',19,C.muted,'middle');}
+  out+=arrow(193,155,222,155,C.teal,p)+arrow(731,155,770,155,C.teal,p)+text(476,109,`${L} zero-input update${L===1?'':'s'}`,19,C.muted,'middle')+text(476,205,L>10?'10 shown as a schematic; all L links are calculated':'Each 0 means no new external input.',16,C.muted,'middle');
+  out+=box(783,89,107,129,C.sand)+text(836,118,beat>=4?`h${shown}`:'hL',21,C.coral,'middle')+text(836,169,beat>=4?f(path[shown].h):'?',22,C.coral,'middle');
+  out+=text(35,274,`Trace: after ${shown} of ${L} links`,21,C.ink)+box(35,293,850,31,'#edf0e7');
+  out+=`<rect x="35" y="293" width="${850*(shown/L)}" height="31" rx="10" fill="${C.teal}"/>`;
+  out+=text(35,367,`Current state = ${f(path[shown].h)} · ${activation==='linear'?`hₖ = ${f(w)}ᵏ × h₀`:`hₖ = tanh(${f(w)}hₖ₋₁)`}`,25,C.teal)+text(35,407,'Forward magnitude measures the state, not prediction accuracy.',18,C.muted);
+  return wrap('DISTANCE / no new evidence does not mean no computation',out);
+ }
+ function gradient(beat,p,o){const L=Number(o.gap??20),w=Number(o.weight??.8),activation=o.activation||'linear',path=M.memoryChain(L,w,activation);let g=1;const gs=[1,...path.slice(1).reverse().map(s=>(g*=s.derivative))];
+  const shown=beat>4?L:beat===4?Math.min(L,Math.floor(Math.min(L,5)+(L-Math.min(L,5))*p)):beat===3?Math.min(L,5):beat===2?Math.min(L,4):beat===1?1:0;
+  const logs=gs.map(v=>Math.log10(Math.max(1e-20,Math.abs(v)))),low=Math.min(-1,Math.floor(Math.min(...logs))),high=Math.max(1,Math.ceil(Math.max(...logs)));
+  const x=k=>92+630*k/L,y=v=>299-195*(v-low)/(high-low);let out='';
+  out+=text(37,75,`${activation==='linear'?'Linear':'Tanh'} cell · w = ${f(w)} · ${L} recurrent links`,19,C.ink);
+  for(const v of [...new Set([low,0,high])]){out+=`<line x1="92" y1="${y(v)}" x2="725" y2="${y(v)}" stroke="${C.line}" ${v===0?'stroke-dasharray="5 5"':''}/>`+text(78,y(v)+6,`10^${v}`,15,C.muted,'end');}
+  out+=`<path d="M92 92V308H729" stroke="${C.muted}" fill="none"/>`;
+  const points=gs.slice(0,shown+1).map((v,k)=>`${x(k)},${y(logs[k])}`).join(' ');
+  out+=`<polyline points="${points}" fill="none" stroke="${C.coral}" stroke-width="4"/><circle cx="${x(shown)}" cy="${y(logs[shown])}" r="6" fill="${C.coral}"/>`;
+  out+=text(92,334,'0',15,C.muted,'middle')+text(722,334,L,15,C.muted,'middle')+text(409,364,'Backward links crossed (0 = final state)',18,C.muted,'middle');
+  out+=box(750,104,141,145,C.sand)+text(820,135,'SENSITIVITY',13,C.coral,'middle')+text(820,177,f(gs[shown]),24,C.coral,'middle')+text(820,211,`after ${shown} links`,15,C.muted,'middle')+text(820,236,'seed = 1',15,C.muted,'middle');
+  out+=text(35,411,beat<4?'Predict the product before revealing the full backward path.':beat>=6?'Separate parameter examples: clip(38, 5) = 5; clip(0.0115, 5) = 0.0115.':activation==='linear'?`Each local derivative is w. Full path: ${f(w)}^${L} = ${f(gs.at(-1))}`:'Each local derivative is w(1 − hₜ²); saturation can shrink the product.',18,C.ink);
+  return wrap('BACKWARD SENSITIVITY / magnitude on a log₁₀ scale',out);
+ }
+ const renderers={order,tasks,state,unroll,memory,gradient};
+ function render(key,beat=0,progress=1,options={}){return renderers[key](beat,progress,options).replaceAll('a-teal',`${key}-a-teal`).replaceAll('a-coral',`${key}-a-coral`);}
+ const api={render,format:f};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SequenceScenes=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Accessible worksheet controls, guided playback, and local practice progress. */
+'use strict';
+(() => {
+ const M=window.SequenceModel,S=window.SequenceScenes,stories=window.SequenceStories;
+ const $=(selector,base=document)=>base.querySelector(selector);
+ const $$=(selector,base=document)=>[...base.querySelectorAll(selector)];
+ const f=S.format,players=[],controllers=[];
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const chain={gap:20,weight:.8,activation:'linear'};
+ const defaults={order:{reverse:false},tasks:{task:'classification'},state:{weight:.5,activation:'tanh'},unroll:{length:4,hidden:2},memory:chain,gradient:chain};
+ const range=(key,label,min,max,step,value)=>`<label>${label} <output data-output="${key}">${value}</output><input type="range" data-option="${key}" aria-label="${label}" min="${min}" max="${max}" step="${step}" value="${value}"></label>`;
+ const activation=(value)=>`<label>Cell rule<select data-option="activation" aria-label="Cell activation"><option value="linear" ${value==='linear'?'selected':''}>Linear · for hand calculation</option><option value="tanh" ${value==='tanh'?'selected':''}>Tanh · nonlinear RNN</option></select></label>`;
+ function controls(key){
+  if(key==='order')return '<button data-reverse aria-pressed="false">Reverse order ↔</button><span class="storage-note">Time still runs left to right; the frame order changes.</span>';
+  if(key==='tasks')return '<label>Prediction task<select data-option="task" aria-label="Prediction task"><option value="classification">Review label · many to one</option><option value="tagging">Token tags · aligned outputs</option><option value="next">Next token · shifted targets</option></select></label>';
+  if(key==='state')return range('weight','Recurrent weight w',0,1.5,.1,.5)+activation('tanh');
+  if(key==='unroll')return range('length','Sequence length T',2,8,1,4)+range('hidden','Hidden width H',2,8,1,2)+'<span class="storage-note">Input d = 3 · output C = 2 · one recurrent layer</span>';
+  return range('gap','Recurrent links L',1,40,1,20)+range('weight','Recurrent weight w',.4,1.5,.1,.8)+activation('linear')+(key==='gradient'?'<div class="preset-row" role="group" aria-label="Gradient experiments"><button data-preset="decay">Decay</button><button data-preset="growth">Growth</button><button data-preset="saturation">Saturation</button></div>':'');
+ }
+ const stat=(label,value)=>`<div class="stat"><small>${label}</small><strong>${value}</strong></div>`;
+ function readout(key,beat,o,progress=1){
+  const revealed=beat>4||(beat===4&&progress===1);
+  if(key==='order')return '<p><b>Read the matrix:</b> row 2 contains the moving dot; every other pixel is 0. The time average loses direction because addition ignores order.</p>';
+  if(key==='tasks')return '<p><b>Input vocabulary:</b> [not, very, good]. The output targets are supplied examples. ADV = adverb; ADJ = adjective. EOS marks the end. A real model must learn its readout from labelled examples.</p>';
+  if(key==='state'){
+   const t=M.trace([1,0,1],Number(o.weight),o.activation),upto=beat>=6?3:beat>=5?2:beat>=4?1:0;
+   return `<div class="math-scroll"><table class="math-table"><caption>Exact scalar trace · rounded here to three decimals</caption><thead><tr><th>t</th><th>xₜ</th><th>hₜ₋₁</th><th>xₜ + whₜ₋₁</th><th>hₜ</th></tr></thead><tbody>${t.map((s,i)=>`<tr><td>${s.t}</td><td>${s.x}</td><td>${i<upto?f(s.previous):'—'}</td><td>${i<upto?f(s.z):'—'}</td><td class="number">${i<upto?f(s.h):'predict'}</td></tr>`).join('')}</tbody></table></div><p>Values reveal with the walkthrough. Weight 1 on the input, bias 0, h₀ = 0. ${o.activation==='linear'?'Linear mode deliberately removes tanh.':'Tanh is applied after the two contributions are added.'}</p>`;
+  }
+  if(key==='unroll')return `<div class="stats">${stat('Parameters (weights + biases)',M.parameters(3,+o.hidden,2))}${stat('Cell evaluations',o.length)}${stat('Coordinates in each state',o.hidden)}</div><p>Count: 3H + H² + H + 2H + 2. This includes the output head. A single-layer unroll is not a stack of independent layers.</p>`;
+  const last=M.memoryChain(+o.gap,+o.weight,o.activation).at(-1);
+  if(key==='memory')return `<div class="stats">${stat('Starting state h₀','1')}${stat('Ending state hL',revealed?f(last.h):'Predict')}${stat('Zero-input updates',o.gap)}</div><p>All future inputs are 0. This is a controlled propagation experiment. The final scalar is not a probability, and its sign can survive even when its magnitude shrinks.</p>`;
+  return `<div class="stats">${stat('Forward state hL',revealed?f(last.h):'Predict')}${stat('Backward sensitivity ∂hL/∂h₀',revealed?f(last.gradient):'Predict')}</div><p>Both quantities come from the same recurrence. The plotted sensitivity is never clipped. ${beat>=6?'Separate supplied parameter-gradient examples: g = 38 clips to 5; g = 0.0115 stays 0.0115. Optimizers clip accumulated parameter gradients after backward propagation, not this state-sensitivity path.':'The final beat introduces a separate parameter-gradient clipping example.'}</p>`;
+ }
+ function download(name,content,type='text/plain'){
+  const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ function stopOthers(current){players.forEach(p=>{if(p!==current)p.pause();});}
+ $$('[data-animation]').forEach((host,number)=>{
+  const key=host.dataset.animation,story=stories[key],o=defaults[key],id=`player-${key}`;
+  host.innerHTML=`<div class="anim-heading"><span class="eyebrow">Guided animation / ${String(number+1).padStart(2,'0')}</span><h3>${story.title}</h3><p>${story.subtitle}</p></div><div class="lab-controls">${controls(key)}</div><div class="anim-toolbar" role="group" aria-label="${key} playback controls"><button class="anim-play" aria-label="Play ${key} animation">▶ Play</button><button class="anim-previous" aria-label="Previous ${key} beat">← Back</button><button class="anim-next" aria-label="Next ${key} beat">Next →</button><button class="anim-replay" aria-label="Replay ${key} animation">↺ Replay</button><label for="${id}-speed">Speed<select id="${id}-speed" class="anim-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><span class="anim-counter"></span></div><div class="anim-viewport" tabindex="0" role="region" aria-label="${key} diagram; scroll horizontally on a narrow screen"><div class="anim-canvas"></div></div><p class="anim-pan-hint">Swipe across the diagram. Numbers keep their readable size.</p><div class="anim-timeline"><label for="${id}-timeline">Scrub the walkthrough<input id="${id}-timeline" type="range" min="0" max="${story.steps.length-1}" step="0.01" value="0" class="anim-scrubber"></label><button class="anim-download">Download SVG frame ↓</button></div><div class="anim-beats" role="group" aria-label="${key} animation beats">${story.steps.map((step,i)=>`<button type="button" data-beat="${i}" aria-label="${key}: ${step.title}"><span>${String(i+1).padStart(2,'0')}</span>${step.title}${step.checkpoint?'<i>Predict</i>':''}</button>`).join('')}</div><div class="anim-caption" aria-live="polite"><span class="anim-phase"></span><h4></h4><p class="anim-narration"></p><div class="anim-equation"></div><p class="anim-prompt" hidden>Pause for predictions. Choose Continue or Next to reveal.</p></div><p class="anim-assumptions">${story.note}</p><p class="anim-reduced" ${reduced.matches?'':'hidden'}>Reduced motion is on: controls reveal stable steps without animated movement.</p><div class="readout"></div>`;
+  const query=selector=>$(selector,host),canvas=query('.anim-canvas');let previousBeat=-1,current={index:0,progress:1},previousFrame='',previousReadout='';
+  function render(state,force=false){
+   current=state;const step=story.steps[state.index],frame=`${state.index}:${state.progress.toFixed(3)}`;
+   if(force||previousFrame!==frame){canvas.innerHTML=S.render(key,state.index,state.progress,o);previousFrame=frame;}
+   host.dataset.currentBeat=String(state.index);host.dataset.playing=String(state.playing);host.dataset.checkpoint=String(state.checkpoint);
+   const label=state.playing?'Pause':state.checkpoint?'Continue':reduced.matches?'Next step':'Play';
+   query('.anim-play').textContent=`${state.playing?'Ⅱ':'▶'} ${label}`;query('.anim-play').setAttribute('aria-label',`${label} ${key} animation`);
+   query('.anim-previous').disabled=state.index===0;query('.anim-next').disabled=state.index===story.steps.length-1;
+   query('.anim-counter').textContent=`${state.index+1} / ${story.steps.length}`;
+   query('.anim-scrubber').value=String(state.index===0?0:state.index-1+state.progress);query('.anim-scrubber').setAttribute('aria-valuetext',`Beat ${state.index+1}: ${step.title}`);
+   if(force||previousBeat!==state.index){
+    query('.anim-caption h4').textContent=step.title;query('.anim-narration').textContent=step.narration;query('.anim-equation').textContent=step.equation;
+    $$('[data-beat]',host).forEach((button,i)=>{button.classList.toggle('current',i===state.index);button.setAttribute('aria-pressed',String(i===state.index));});
+    previousBeat=state.index;
+   }
+   const readoutState=`${state.index}:${state.progress===1}`;
+   if(force||readoutState!==previousReadout){query('.readout').innerHTML=readout(key,state.index,o,state.progress);previousReadout=readoutState;}
+   query('.anim-phase').textContent=step.checkpoint?'PREDICT BEFORE REVEAL':'FOLLOW THE MECHANISM';query('.anim-prompt').hidden=!state.checkpoint;query('.anim-caption').classList.toggle('is-checkpoint',state.checkpoint);
+  }
+  const player=window.SequenceTimeline.createPlayer(story.steps,render,{reduced:()=>reduced.matches,transition:1200,hold:5000});players.push(player);
+  const sync=()=>{$$('[data-option]',host).forEach(input=>{input.value=String(o[input.dataset.option]);const output=$(`[data-output="${input.dataset.option}"]`,host);if(output)output.textContent=input.value;});};
+  const refresh=()=>{player.pause();sync();render({...player.state},true);};controllers.push({key,player,refresh});
+  query('.anim-play').onclick=()=>{if(player.state.playing)player.pause();else{stopOthers(player);player.play();}};
+  query('.anim-next').onclick=()=>{stopOthers(player);player.next();};query('.anim-previous').onclick=()=>player.previous();query('.anim-replay').onclick=()=>player.restart();
+  query('.anim-speed').onchange=e=>player.speed(+e.target.value);query('.anim-scrubber').oninput=e=>{stopOthers(player);player.seek(+e.target.value);};
+  $$('[data-beat]',host).forEach(button=>button.onclick=()=>{stopOthers(player);player.seek(+button.dataset.beat);});
+  query('.anim-download').onclick=()=>download(`${key}-beat-${current.index+1}.svg`,canvas.innerHTML,'image/svg+xml');
+  $$('[data-option]',host).forEach(input=>input.addEventListener(input.tagName==='SELECT'?'change':'input',()=>{
+   o[input.dataset.option]=input.type==='range'?+input.value:input.value;
+   if(key==='memory'||key==='gradient')controllers.filter(c=>['memory','gradient'].includes(c.key)).forEach(c=>c.refresh());else refresh();
+  }));
+  if(key==='order')query('[data-reverse]').onclick=()=>{o.reverse=!o.reverse;query('[data-reverse]').setAttribute('aria-pressed',String(o.reverse));query('[data-reverse]').textContent=o.reverse?'Restore original order ↔':'Reverse order ↔';refresh();};
+  $$('[data-preset]',host).forEach(button=>button.onclick=()=>{Object.assign(chain,{gap:20,weight:button.dataset.preset==='decay'?.8:button.dataset.preset==='growth'?1.2:1.3,activation:button.dataset.preset==='saturation'?'tanh':'linear'});controllers.filter(c=>['memory','gradient'].includes(c.key)).forEach(c=>c.refresh());player.seek(story.steps.length-1);});
+  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)player.pause();},{threshold:0});observer.observe(host);}
+  reduced.addEventListener('change',()=>{player.pause();if(reduced.matches)player.seek(player.state.index);query('.anim-reduced').hidden=!reduced.matches;render({...player.state},true);});
+ });
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)players.forEach(p=>p.pause());});
+ // Answer text is always inserted using textContent/value, never evaluated or rendered as HTML.
+ const storageKey='dl-sequence-modelling-v1';let saved={answers:{},notes:{}};
+ try{const value=JSON.parse(localStorage.getItem(storageKey)||'null');if(value&&typeof value==='object'&&value.answers&&value.notes)saved=value;}catch{ /* Practice still works when storage is unavailable. */ }
+ const forms=$$('.check');
+ function store(){try{localStorage.setItem(storageKey,JSON.stringify(saved));}catch{$('#storage-status').textContent='Browser saving is unavailable. Use Save my answers to keep a text copy.';}}
+ function answer(form){return form.dataset.kind==='number'?$('input[name=answer]',form).value:($('input[name=answer]:checked',form)?.value||'');}
+ function parseNumber(value){const s=value.trim().replaceAll(',','');if(!s)return NaN;if(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*\/\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(s)){const [a,b]=s.split('/').map(Number);return b===0?NaN:a/b;}return Number(s);}
+ function isCorrect(form,value){if(form.dataset.kind==='choice')return value===form.dataset.answer;const n=parseNumber(value);return Number.isFinite(n)&&Math.abs(n-Number(form.dataset.answer))<=Number(form.dataset.tolerance);}
+ function progress(){const n=forms.filter(form=>form.classList.contains('correct')).length;$('#progress').value=n;$('#progress-label').textContent=`${n} of ${forms.length} checks understood`;}
+ function grade(form,announce=true){const value=answer(form),correct=isCorrect(form,value);form.classList.toggle('correct',correct);if(announce)$('.feedback',form).textContent=!value?'Enter or choose an answer first.':correct?'Correct. Open the reasoning to explain why.':`Try again. ${form.dataset.hint}`;saved.answers[form.id]={value,checked:!!value};store();progress();}
+ forms.forEach(form=>{
+  const existing=saved.answers[form.id];if(existing&&typeof existing.value==='string'){
+   if(form.dataset.kind==='number')$('input[name=answer]',form).value=existing.value;else $$('input[name=answer]',form).forEach(input=>input.checked=input.value===existing.value);
+   if(existing.checked)grade(form,false);
+  }
+  form.addEventListener('submit',e=>{e.preventDefault();grade(form);});
+  form.addEventListener('input',()=>{saved.answers[form.id]={value:answer(form),checked:false};form.classList.remove('correct');$('.feedback',form).textContent='';store();progress();});
+ });
+ $$('[data-save]').forEach(field=>{field.value=typeof saved.notes[field.id]==='string'?saved.notes[field.id]:'';field.addEventListener('input',()=>{saved.notes[field.id]=field.value;store();});});
+ $('#hide-cue').onclick=()=>{const word=$('#cue-word'),hidden=word.style.visibility==='hidden';word.style.visibility=hidden?'visible':'hidden';word.setAttribute('aria-hidden',String(!hidden));$('#hide-cue').textContent=hidden?'Hide the word':'Reveal the word';$('#hide-cue').setAttribute('aria-expanded',String(hidden));};
+ $('#export').onclick=()=>{let body='REMEMBER WHAT CAME BEFORE — MY WORKSHEET ANSWERS\n\n';forms.forEach(form=>{const v=answer(form);let label=v;if(form.dataset.kind==='choice'&&v)label=$$('label',form).find(l=>$('input',l)?.value===v)?.textContent.trim()||v;body+=`${$('.qnum',form).textContent}\n${$('h3',form).textContent}\nMy answer: ${label||'(unanswered)'}\n\n`;});$$('[data-save]').forEach(field=>{body+=`${$(`label[for="${field.id}"]`).textContent}\n${field.value||'(unanswered)'}\n\n`;});download('sequence-modelling-my-answers.txt',body);};
+ $('#reset').onclick=()=>{if(!window.confirm('Reset all saved answers for this worksheet in this browser?'))return;saved={answers:{},notes:{}};forms.forEach(form=>{form.reset();form.classList.remove('correct');$('.feedback',form).textContent='';});$$('[data-save]').forEach(field=>field.value='');store();progress();};
+ $('#print').onclick=()=>window.print();let printPositions=[];
+ window.addEventListener('beforeprint',()=>{printPositions=controllers.map(c=>c.player.state.index);controllers.forEach(c=>c.player.seek(stories[c.key].steps.length-1));});
+ window.addEventListener('afterprint',()=>controllers.forEach((c,i)=>c.player.seek(printPositions[i]??0)));
+ if('IntersectionObserver' in window){const nav=$$('.sidebar nav a');const observer=new IntersectionObserver(entries=>{const active=entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];if(active)nav.forEach(a=>{if(a.hash===`#${active.target.id}`)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});},{rootMargin:'-10% 0px -65% 0px'});$$('section[id]').filter(s=>nav.some(a=>a.hash===`#${s.id}`)).forEach(s=>observer.observe(s));}
+ progress();
+})();
+
+</script>
+</body></html>
